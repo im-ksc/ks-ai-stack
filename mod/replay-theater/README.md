@@ -23,21 +23,9 @@ The patterns it demonstrates:
 
 ## Demo
 
-After a rename, the hint above the prompt:
+Claude renames a function across three files. `/replay` opens the pane: `n` moves to the next edit, `e` asks for a plain-language explanation of it, `v` marks it reviewed, and `c` closes the pane.
 
-![The Replay hint above the prompt after a turn with five edits](screenshots/replay-theater-hint.png)
-
-The pane, on step 1 of 5:
-
-![The Replay Theater pane showing step 1 of 5](screenshots/replay-theater-pane.png)
-
-A Write step for a new file, capped at 12 lines:
-
-![A Write step for a new file, with the diff capped at 12 lines](screenshots/replay-theater-write.png)
-
-Inline above the prompt in an 80-column terminal:
-
-![The pane drawn inline in an 80-column terminal](screenshots/replay-theater-80-columns.png)
+![Replay Theater stepping through a three-file rename](demo/replay-theater.gif)
 
 ## How it was built
 

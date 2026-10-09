@@ -13,4 +13,6 @@ Restart Claude Code after installing.
 
 ## Mods
 
+![Replay Theater stepping through a three-file rename](mod/replay-theater/demo/replay-theater.gif)
+
 - [replay-theater](mod/replay-theater): step through the file edits Claude made in the last turn, one diff at a time. Run `/replay`.
