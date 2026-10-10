@@ -139,9 +139,9 @@ test("cruising, the verdict names the weekly reset's day", async ($, on) => {
   const day = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][new Date(rateLimits[1].resetsAt).getDay()];
   expect((await ui.find({ type: "Text", text: /^Cruising/ }))?.text).toBe(`Cruising. Plenty left for ${day}.`);
   expect(await colorOf(ui, /^Cruising/)).toBe("success");
-  // Under 10% into the 5-hour window: no tick and no projection yet.
+  // Under 10% into the 5-hour window: no tick, and the pace line says it's early.
   expect((await ui.find({ key: "five_hour" }))?.text).toMatch(/^5 Hour [━─]{44}  10%$/);
-  expect((await ui.find({ key: "five_hour-pace" }))?.text).toBe("  resets in 4h 45m");
+  expect((await ui.find({ key: "five_hour-pace" }))?.text).toBe("  Too early to project · resets in 4h 45m");
   await ui.unmount();
 });
 
@@ -195,6 +195,8 @@ test("the desktop's collapse is a chromeless button over a drawn triangle", asyn
   expect((await ui.findAll({})).filter((n) => /used$/.test(n.props.alt ?? "")).map((n) => n.props.source)).toEqual([expect.stringMatching(/stroke-dasharray="\d+ 100"/)]);
   // The press is centred on the triangle, as wide as its box.
   expect((await ui.find({ key: "press" }))?.props).toMatchObject({ width: 4, justifyContent: "center" });
+  // Its blank label is transparent, so the ellipsis the button cuts it to doesn't show.
+  expect((await ui.find({ key: "collapse" }))?.children).toMatchObject([{ props: { color: "#00000000" } }]);
   await ui.unmount();
 });
 
