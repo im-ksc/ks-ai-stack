@@ -9,8 +9,7 @@ const REPO = "https://github.com/im-ksc/ks-ai-stack.git";
 const CLONE = join(homedir(), ".claude", "mods", "ks-ai-stack");
 
 function run(cmd, args, opts = {}) {
-  // npx is a .cmd shim on Windows, which needs a shell to run.
-  const r = spawnSync(cmd, args, { stdio: "inherit", shell: process.platform === "win32", ...opts });
+  const r = spawnSync(cmd, args, { stdio: "inherit", ...opts });
   if (r.status !== 0) fail(`${cmd} ${args.join(" ")} failed`);
 }
 
@@ -40,7 +39,9 @@ function syncMods() {
 }
 
 function syncSkills() {
-  run("npx", ["skills", "update", "-g"]);
+  // npx is a .cmd shim on Windows, which needs a shell to run. Only fixed args go
+  // through the shell, so paths with spaces (the clone path) never do.
+  run("npx", ["skills", "update", "-g"], { shell: process.platform === "win32" });
 }
 
 const step = process.argv[2];
