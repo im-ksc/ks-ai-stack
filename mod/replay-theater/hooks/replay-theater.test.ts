@@ -62,6 +62,8 @@ test("the pane draws the timeline and steps through edits", async ($, on) => {
     for (const [key, label] of [["prev", "Previous"], ["next", "Done"], ["explain", "Explain"], ["close", "Close"]]) {
       expect((await ui.find({ key }))?.props.label).toBe(label);
     }
+    // The desktop draws hotkeys as chips on its buttons, so it gets none.
+    expect((await ui.find({ key: "next" }))?.props.hotkey).toBe(surface === "desktop" ? undefined : "n");
     expect(await ui.find({ key: "open" })).toBeUndefined();
     await ui.press({ key: "go0" });
     expect(await ui.find({ type: "Text", text: /^README\.md$/ })).toBeDefined();
@@ -91,7 +93,8 @@ test("Explain asks the model about the current edit and keeps the answer", async
   expect(asked.length).toBe(1);
   expect(asked[0]).toContain("a.js");
   expect(asked[0]).toContain("+let y = 1;");
-  expect(asked[0]).toMatch(/as simply as/);
+  expect(asked[0]).toMatch(/non-technical/);
+  expect(asked[0]).not.toMatch(/2 to 5|each changed line/);
   expect(asked[0]).toContain("Avoid em dashes");
   expect(asked[0]).not.toContain("name: unslop");
   expect((await ui.find({ key: "explain" }))?.props.label).toBe("Explaining…");
