@@ -55,6 +55,12 @@ Claude creates a file in a new repo on `feat/demo`. When the turn ends, the bran
 
 ![The HUD band filling in after a turn, then collapsing to one line and expanding again](demo/hud.gif)
 
+In the desktop app, the same band draws its bars as solid rounded bars in two columns. Collapsed, the limits and context become rings. These are screenshots from a live session:
+
+![The HUD band in the desktop app, expanded, with the limits on the left and the context on the right](demo/hud-desktop.png)
+
+![The HUD band in the desktop app, collapsed to one line with rings](demo/hud-desktop-collapsed.png)
+
 ## How it was built
 
 - **Model:** built with Claude in Claude Code. The mod itself doesn't call a model.
