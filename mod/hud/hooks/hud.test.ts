@@ -195,6 +195,7 @@ test("the desktop's collapse is a plain ▼ / ▲ button", async ($, on) => {
   expect((await ui.find({ key: "collapse" }))?.props.label).toBe("▲");
   // Collapsed, each bar is a ring.
   expect((await ui.findAll({})).filter((n) => /used$/.test(n.props.alt ?? "")).map((n) => n.props.source)).toEqual([expect.stringMatching(/stroke-dasharray="\d+ 100"/)]);
+  await ui.unmount();
 });
 
 test("a narrow terminal stacks the bars and drops the detail rows", async ($, on) => {
