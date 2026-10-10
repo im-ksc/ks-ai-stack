@@ -248,6 +248,18 @@ export function register(on) {
     const sep = dim(" │ ");
     const line = (key, children) => Box({ key, children: Text({ children }) }); // a Text takes no key
 
+    const toggle = async () => {
+      await update($, isCollapsed, () => !collapsed);
+      await $.store.set("isCollapsed", !collapsed);
+    };
+    // The desktop shades every button but a plain one, so a bigger triangle is drawn and a
+    // chromeless button laid over it takes the click.
+    const triangle = () => Box({ key: "collapse-box", width: 3, height: 1, children: [
+      Box({ key: "glyph", position: "absolute", top: 0, left: 0, width: 3, height: 1, alignItems: "center", justifyContent: "center",
+        children: Svg({ alt: collapsed ? "Expand" : "Collapse", width: 12, height: 8,
+          source: `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="8"><path d="${collapsed ? "M1 7 6 1 11 7z" : "M1 1h10L6 7z"}" fill="#a0a0a0"/></svg>` }) }),
+      Box({ key: "press", position: "absolute", top: 0, left: 0, children: Button({ key: "collapse", label: "   ", plain: true, onPress: toggle }) }),
+    ] });
     const buttons = [
       Button({ key: "compact", label: "Compact", ...(!isDesktop && { hotkey: "c" }), variant: "secondary", onPress: async () => {
         try {
@@ -256,10 +268,7 @@ export function register(on) {
           $.ui.toast(e.props.isWorking ? "Compact runs between turns. Try again when this one ends." : `Compact failed: ${err?.message ?? err}`);
         }
       } }),
-      Button({ key: "collapse", label: collapsed ? "▸" : "▾", ...(!isDesktop && { hotkey: "h" }), onPress: async () => {
-        await update($, isCollapsed, () => !collapsed);
-        await $.store.set("isCollapsed", !collapsed);
-      } }),
+      isDesktop ? triangle() : Button({ key: "collapse", label: collapsed ? "▸" : "▾", hotkey: "h", onPress: toggle }),
     ];
     // Parts kept whole; the one marked `shrinks` is cut with … when the row is too narrow.
     const row = (key, parts) => Box({
@@ -367,9 +376,9 @@ export function register(on) {
 
       lines = [row("head", join(parts, sep))];
       if (isWide) {
-        const column = (key, children) => children.length && Box({ key, flexDirection: "column", width: isDesktop ? "50%" : half, children });
+        const column = (key, children) => children.length && Box({ key, flexDirection: "column", justifyContent: "space-between", width: isDesktop ? "50%" : half, children });
         const columns = [column("limits", limitRows), column("context-column", contextRows)].filter(Boolean);
-        if (columns.length) lines.push(Box({ key: "body", flexDirection: "row", gap: 3, children: columns }));
+        if (columns.length) lines.push(Box({ key: "body", flexDirection: "row", gap: 3, marginTop: isDesktop ? 0.5 : 1, children: columns }));
       } else {
         lines.push(...limitRows, ...contextRows);
       }
