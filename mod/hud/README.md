@@ -51,9 +51,9 @@ The patterns it demonstrates:
 
 ## Demo
 
-The recording shows version 0.2, before the redesign. Claude works through a four-item todo list in a new repo on `feat/demo`. The branch gets a `*` once the first file exists, the todo bar fills with the current item beside it, and the context, cost and token figures fill in when the turn ends. The recording is scripted: run `vhs mod/hud/demo/hud.tape` from the repo root in a plain terminal to make it again.
+Claude creates a file in a new repo on `feat/demo`. When the turn ends, the branch gets its `*` and the limits, context, cost and tokens fill in. The band then takes the focus with ctrl+x tab, and `h` collapses it to one line and expands it again. The recording is scripted: run `vhs mod/hud/demo/hud.tape` from the repo root in a plain terminal to make it again.
 
-![The HUD band in version 0.2, filling its todo bar as Claude creates four files](demo/hud.gif)
+![The HUD band filling in after a turn, then collapsing to one line and expanding again](demo/hud.gif)
 
 ## How it was built
 
