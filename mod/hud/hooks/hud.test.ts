@@ -32,6 +32,19 @@ test("the band shows the branch with a dirty mark", async ($, on) => {
   }
 });
 
+test("another mod's band still shows under the HUD", async ($, on) => {
+  on("ui.render", () => ENGINE as never);
+  on("store.get", () => ({ value: undefined }) as never);
+  on("command.register", () => ({ value: undefined }) as never);
+  git(on, "main", "");
+  on("session.start", () => ({ cwd: "/p" }));
+  await $.session.start({ cwd: "/p" } as never);
+  const ui = await band($);
+  expect((await ui.find({ type: "Text", text: /^⎇/ }))?.text).toBe("⎇ main");
+  expect(await ui.find({ type: "Text", text: "engine" })).toBeDefined();
+  await ui.unmount();
+});
+
 test("todo progress counts TodoWrite and Task items and names the one in progress", async ($, on) => {
   on("ui.render", () => ENGINE as never);
   on("tool.call", (_$, e) => ({ result: e.tool === "TaskCreate" ? { task: { id: "7", subject: "x" } } : {} }) as never);

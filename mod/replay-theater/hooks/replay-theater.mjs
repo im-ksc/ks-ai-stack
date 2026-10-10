@@ -323,17 +323,20 @@ export function register(on, options) {
   });
 
   // The band above the prompt: the hint and a button that opens the pane.
-  on("ui.render", { component: "AbovePrompt" }, ($, e, next) => {
+  on("ui.render", { component: "AbovePrompt" }, async ($, e, next) => {
     if (state.isOpen && state.inBand) return replayView($, e, true);
     if (!state.replay.length || state.isOpen) return next(e);
     const { Box, Text, Button } = $.ui.resolve(e);
-    return Box({
-      flexDirection: "row", gap: 2, paddingX: 1,
+    const hint = Box({
+      key: "replay-hint", flexDirection: "row", gap: 2, paddingX: 1,
       children: [
         Text({ color: "magenta", bold: true, children: hintText() }),
         Button({ key: "open-replay", label: "Replay", hotkey: "r", onPress: () => openReplay($) }),
       ],
     });
+    // Another mod's band, such as hud, stays under the hint.
+    const beneath = await next(e);
+    return beneath ? Box({ flexDirection: "column", children: [hint, beneath] }) : hint;
   });
 
   // The pane.

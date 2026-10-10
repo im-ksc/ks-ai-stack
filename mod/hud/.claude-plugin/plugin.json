@@ -1,6 +1,6 @@
 {
   "name": "hud",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "A three-line band above the prompt: branch, todo progress, context, cost and usage limits.",
   "author": {
     "name": "imksc"

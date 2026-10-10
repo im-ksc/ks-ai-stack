@@ -55,6 +55,7 @@ Claude works through a four-item todo list in a new repo on `feat/demo`. The bra
   - The layout, colours, the dirty mark and the `/hud` toggle were settled in an interview before building.
   - Tested with `claude plugin test` only. It hasn't been tried in a live terminal yet.
   - 0.2.0, after use in a live terminal: the band was hard to scan and wrapped on narrow terminals. It moved to three lines, with dim labels, 10-cell bars, a token fraction for context, and the limits shown as used rather than left.
+  - 0.2.1: the replay-theater hint replaced the band after each turn. Both mods now draw the band beneath them under their own rows.
 
 ## Run it
 
@@ -104,7 +105,7 @@ No environment variables or configuration.
 - The context percentage uses the engine's local estimate of the auto-compact point, which sends no API request.
 - Todos and token counts are kept for the session. `/clear` empties them. After `--resume` the token counts start from zero while the cost doesn't, because the cost comes from the engine's ledger.
 - The branch isn't refreshed when you change branches outside Claude Code. It updates after Claude's next Bash call or the next session.
-- The band above the prompt is shared. If another mod also draws there, only one of them shows.
+- The band above the prompt is shared. Another mod's band, such as the replay-theater hint, shows under the HUD. Which band sits on top depends on the order Claude Code runs the mods in.
 - A gateway's `spend_limit` window isn't shown.
 
 ## Dependencies
