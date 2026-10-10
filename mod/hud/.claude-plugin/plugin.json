@@ -1,6 +1,6 @@
 {
   "name": "hud",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "A band above the prompt: usage limits with a pace verdict, context, branch and cost, with Compact and collapse buttons.",
   "author": {
     "name": "imksc"

@@ -1,12 +1,10 @@
 // HUD: a band above the prompt. Expanded: the branch, a verdict on the usage
 // limits and the cost, then the 5h and weekly limits beside the context
 // (character bars in a terminal, SVG bars in the desktop app).
-// Collapsed: one line, with each bar drawn as a circle.
+// Collapsed: one line spread across the band, with each bar drawn as a ring.
 
 import { atom, read, update } from "claude-code";
 
-const todos = atom({ plugin: "hud", key: "todos" }, []);
-const tasks = atom({ plugin: "hud", key: "tasks" }, {});
 const branch = atom({ plugin: "hud", key: "branch" }, null);
 const budget = atom({ plugin: "hud", key: "budget" }, {});
 const tokens = atom({ plugin: "hud", key: "tokens" }, { input: 0, output: 0 });
@@ -49,6 +47,13 @@ function svgBar(Svg, alt, segments, tick = null) {
   return Svg({ alt, height: 8, source });
 }
 
+// A ring filled clockwise from the top to `percent`, in its level's colour.
+const ringSvg = (percent) => {
+  const arc = `<circle cx="6" cy="6" r="4.5" fill="none" stroke-width="2"`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12">${arc} stroke="${TRACK}"/>` +
+    `${arc} stroke="${HEX[level(percent)]}" pathLength="100" stroke-dasharray="${Math.max(0, Math.min(100, percent))} 100" transform="rotate(-90 6 6)"/></svg>`;
+};
+
 // A bar in one glyph, for the collapsed line: ○ ◔ ◑ ◕ ●.
 const circle = (percent) => "○◔◑◕●"[Math.max(0, Math.min(4, Math.round(percent / 25)))];
 
@@ -64,9 +69,12 @@ const clock = (time) => {
   const d = new Date(time);
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 };
-// "14:50" today, "Wednesday 09:00" on another day.
-const when = (time, now) =>
-  new Date(time).toDateString() === new Date(now).toDateString() ? clock(time) : `${DAYS[new Date(time).getDay()]} ${clock(time)}`;
+// "14:50" today, "Wednesday 09:00" (or "Wed 09:00") on another day.
+const when = (time, now, isShort = false) => {
+  if (new Date(time).toDateString() === new Date(now).toDateString()) return clock(time);
+  const day = DAYS[new Date(time).getDay()];
+  return `${isShort ? day.slice(0, 3) : day} ${clock(time)}`;
+};
 
 // Two units at most: "2d 20h", "3h 5m", "23m".
 function span(ms) {
@@ -126,11 +134,6 @@ function groups(categories) {
   }));
 }
 
-function todoProgress(items) {
-  if (!items.length) return null;
-  return { done: items.filter((t) => t.status === "completed").length, total: items.length };
-}
-
 // [glyph, colour] cells merged into one Text per run of a colour; no colour draws dim.
 function runs(Text, list) {
   const out = [];
@@ -166,11 +169,9 @@ export function register(on) {
     return { text: hidden ? "HUD hidden. Run /hud to show it again." : "HUD shown." };
   });
 
-  // /clear starts the conversation over: its todos and token counts with it.
+  // /clear starts the conversation over: its token counts with it.
   on("session.end", async ($, e, next) => {
     if (e.reason === "clear") {
-      await update($, todos, () => []);
-      await update($, tasks, () => ({}));
       await update($, tokens, () => ({ input: 0, output: 0 }));
     }
     return next(e);
@@ -179,21 +180,6 @@ export function register(on) {
   on("tool.call", async ($, e, next) => {
     const r = await next(e);
     if (e.tool === "Bash") await refreshBranch($);
-    // Todos from the main loop only: a subagent keeps a list of its own.
-    if (r.deny || r.isError || e.agentId) return r;
-    if (e.tool === "TodoWrite") await update($, todos, () => e.todos);
-    if (e.tool === "TaskCreate" && r.result?.task?.id) {
-      const task = { content: e.subject, status: "pending", activeForm: e.activeForm };
-      await update($, tasks, (all) => ({ ...all, [r.result.task.id]: task }));
-    }
-    if (e.tool === "TaskUpdate") {
-      await update($, tasks, (all) => {
-        const { [e.taskId]: task, ...rest } = all;
-        if (!task || e.status === "deleted") return rest;
-        const { subject, status, activeForm } = e;
-        return { ...rest, [e.taskId]: { content: subject ?? task.content, status: status ?? task.status, activeForm: activeForm ?? task.activeForm } };
-      });
-    }
     return r;
   });
 
@@ -244,7 +230,7 @@ export function register(on) {
     const collapsed = await read($, isCollapsed);
     const { contextPercent, contextTokens, contextLimit, isToCompact, contextGroups, costUsd, fiveHour, weekly } = await read($, budget);
     const t = await read($, tokens);
-    const limits = [["5 Hour", "5h", fiveHour], ["Weekly", "wk", weekly]].filter(([, , l]) => l);
+    const limits = [["5 Hour", "5 Hour", fiveHour], ["Weekly", "Week", weekly]].filter(([, , l]) => l);
     const hasContext = contextPercent !== undefined;
     const sep = dim(" │ ");
     const line = (key, children) => Box({ key, children: Text({ children }) }); // a Text takes no key
@@ -270,11 +256,13 @@ export function register(on) {
     };
     // The desktop shades every button but a plain one, so a bigger triangle is drawn and a
     // chromeless button laid over it takes the click.
-    const triangle = () => Box({ key: "collapse-box", width: 4, height: 1, children: [
+    const triangle = () => Box({ key: "collapse-box", width: 4, height: 1, overflow: "hidden", children: [
       Box({ key: "glyph", position: "absolute", top: 0, left: 0, width: 4, height: 1, alignItems: "center", justifyContent: "center",
         children: Svg({ alt: collapsed ? "Expand" : "Collapse", width: 12, height: 8,
           source: `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="8"><path d="${collapsed ? "M1 7 6 1 11 7z" : "M1 1h10L6 7z"}" fill="#a0a0a0"/></svg>` }) }),
-      Box({ key: "press", position: "absolute", top: 0, left: 0, children: Button({ key: "collapse", label: "    ", plain: true, onPress: toggle }) }),
+      // Centred like the triangle and wider than it: spaces in the desktop's font are narrow.
+      Box({ key: "press", position: "absolute", top: 0, left: 0, width: 4, height: 1, alignItems: "center", justifyContent: "center",
+        children: Button({ key: "collapse", label: "\u2003\u2003", plain: true, hover: { backgroundColor: "#00000000" }, onPress: toggle }) }),
     ] });
     const buttons = [
       Button({ key: "compact", label: "Compact", ...(!isDesktop && { hotkey: "c" }), variant: "secondary", onPress: compact }),
@@ -296,18 +284,29 @@ export function register(on) {
 
     let lines;
     if (collapsed) {
-      const todo = todoProgress([...(await read($, todos)), ...Object.values(await read($, tasks))]);
-      const percentChip = (label, percent, text = `${Math.round(percent)}%`) =>
-        [dim(`${label} `), Text({ color: level(percent), children: circle(percent) }), ` ${text}`];
+      // A ring per limit: SVG on the desktop, a circle glyph in a terminal.
+      const chip = (label, percent, resetsAt) => [
+        isDesktop ? Svg({ alt: `${label} ${Math.round(percent)}% used`, width: 12, height: 12, source: ringSvg(percent) })
+          : Text({ color: level(percent), children: circle(percent) }),
+        Text({ children: [` ${label} `, Text({ color: level(percent), children: `${Math.round(percent)}%` }), resetsAt ? dim(` ↻ ${when(resetsAt, now, true)}`) : ""] }),
+      ];
       const parts = [
-        b && `⎇ ${b.name}${b.isDirty ? "*" : ""}`,
-        todo && [circle((todo.done / todo.total) * 100), ` ${todo.done}/${todo.total}`],
-        ...limits.map(([, short, l]) => percentChip(short, l.percentUsed)),
-        hasContext && percentChip("ctx", contextPercent),
-        costUsd !== undefined && `$${costUsd.toFixed(2)}`,
+        b && [Text({ children: `⎇ ${b.name}${b.isDirty ? "*" : ""}` })],
+        ...limits.map(([, short, l]) => chip(short, l.percentUsed, l.resetsAt)),
+        hasContext && chip("Context", contextPercent),
+        costUsd !== undefined && [Text({ children: `$${costUsd.toFixed(2)}` })],
       ].filter(Boolean);
-      // Nothing to show still draws the buttons, so a collapsed band can be expanded.
-      lines = [row("head", join(parts.map((children) => ({ children })), sep))];
+      // Spread evenly, dividers between; nothing to show still draws the buttons, so a
+      // collapsed band can be expanded.
+      lines = [Box({ key: "head", flexDirection: "row", children: [
+        Box({ key: "parts", flexGrow: 1, flexDirection: "row", justifyContent: "space-evenly", alignItems: "center",
+          children: parts.flatMap((children, i) => [
+            ...(i ? [Box({ key: `sep${i}`, children: sep })] : []),
+            Box({ key: `part${i}`, flexDirection: "row", alignItems: "center", flexShrink: 0, children }),
+          ]) }),
+        Box({ key: "gap", minWidth: 2 }),
+        ...buttons.flatMap((button, i) => (i ? [Text({ children: " " }), button] : [button])),
+      ] })];
     } else {
       const v = limits.length ? verdict(limits.map(([, , l]) => l), now) : null;
       const parts = [
