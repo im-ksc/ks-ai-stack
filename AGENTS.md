@@ -6,6 +6,7 @@ Personal Claude Code mods (plugins built on function hooks), published as one pl
 
 - `.claude-plugin/marketplace.json`: the marketplace manifest. It lists every mod.
 - `.agents/skills/<name>/`: agent skills, one per folder. Codex and Gemini CLI read this path. `.claude/skills` is a symlink to it for Claude Code, so never replace it with a real folder.
+- `scripts/sync.mjs` and `package.json`: `pnpm sync` updates the owner's local mods clone and global skills from `main`. Keep it dependency-free so it runs on Windows too.
 - `mod/<name>/`: one mod per folder, itself a plugin:
   - `.claude-plugin/plugin.json`: the mod's name, version, description and author (`imksc`).
   - `hooks/hooks.json`: lists the hook modules (`"modules": ["./<name>.mjs"]`).
@@ -25,7 +26,7 @@ claude plugin validate ./mod/<name>         # each mod you touched
 claude plugin test ./mod/<name>             # runs its *.test.ts, if any
 ```
 
-Tests import from `claude-code/testing` and run inside the Claude Code binary. Don't add a `package.json`, Jest or Vitest.
+Tests import from `claude-code/testing` and run inside the Claude Code binary. The root `package.json` only holds the sync scripts. Don't add dependencies, Jest or Vitest.
 
 ## Adding a mod
 

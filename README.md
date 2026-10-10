@@ -26,3 +26,13 @@ npx skills add im-ksc/ks-ai-stack -g
 ```
 
 Run `npx skills update -g` to pull later changes from `main`.
+
+## Updating
+
+To pull the latest mods and skills from `main`:
+
+```bash
+pnpm sync
+```
+
+This runs `git pull --ff-only` in `~/.claude/mods/ks-ai-stack` (cloning it first if it's missing), then `npx skills update -g`. Use `pnpm sync:mods` or `pnpm sync:skills` for one half. It needs only Node and git, so `npm run sync` or `node scripts/sync.mjs` work too, on macOS, Linux and Windows. Restart Claude Code afterwards.
