@@ -1,5 +1,6 @@
 // HUD: a band above the prompt. Expanded: the branch, a verdict on the usage
-// limits and the cost, then the 5h and weekly limits beside the context.
+// limits and the cost, then the 5h and weekly limits beside the context
+// (character bars in a terminal, SVG bars in the desktop app).
 // Collapsed: one line, with each bar drawn as a circle.
 
 import { atom, read, update } from "claude-code";
@@ -29,6 +30,24 @@ const cells = (percent, width) => Math.max(0, Math.min(width, Math.round((percen
 
 // Theme colour for how much of a budget is used.
 const level = (used) => (used >= 90 ? "error" : used >= 70 ? "warning" : "success");
+
+// The desktop draws bars as SVG, an image that can't read theme names: hex
+// for the level colours and the context groups, a grey track for either theme.
+const HEX = { success: "#4ade80", warning: "#f5c04a", error: "#f87171", Messages: "#5ec8e5", Tools: "#a78bfa", Other: "#8b93a1" };
+const TRACK = "rgba(128,128,128,0.25)";
+
+// A rounded bar the width of its column: [percent, colour] segments laid end to end.
+function svgBar(Svg, alt, segments, tick = null) {
+  let x = 0;
+  const rects = segments.map(([w, fill]) => {
+    const rect = `<rect x="${x}%" width="${w}%" height="8" fill="${fill}"/>`;
+    x += w;
+    return rect;
+  });
+  if (tick !== null) rects.push(`<rect x="${Math.min(99, tick)}%" width="2" height="8" fill="rgba(160,160,160,0.9)"/>`);
+  const source = `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="8"><clipPath id="r"><rect width="100%" height="8" rx="4"/></clipPath><g clip-path="url(#r)"><rect width="100%" height="8" fill="${TRACK}"/>${rects.join("")}</g></svg>`;
+  return Svg({ alt, height: 8, source });
+}
 
 // A bar in one glyph, for the collapsed line: ○ ◔ ◑ ◕ ●.
 const circle = (percent) => "○◔◑◕●"[Math.max(0, Math.min(4, Math.round(percent / 25)))];
@@ -214,7 +233,8 @@ export function register(on) {
 
   on("ui.render", { component: "AbovePrompt" }, async ($, e, next) => {
     if (e.props.hasSurvey || (await read($, isHidden))) return next(e);
-    const { Box, Text, Button } = $.ui.resolve(e);
+    const { Box, Text, Button, Svg } = $.ui.resolve(e);
+    const isDesktop = e.surface === "desktop"; // draws bars as SVG and hotkeys as chips, so none
     const dim = (children) => Text({ dimColor: true, children });
     await read($, minute); // redraw each minute
     const now = Date.now();
@@ -229,10 +249,14 @@ export function register(on) {
     const line = (key, children) => Box({ key, children: Text({ children }) }); // a Text takes no key
 
     const buttons = [
-      Button({ key: "compact", label: "Compact", hotkey: "c", variant: "secondary", onPress: async () => {
-        try { await $.session.compact(); } catch { $.ui.toast("Compact runs between turns. Try again when this one ends."); }
+      Button({ key: "compact", label: "Compact", ...(!isDesktop && { hotkey: "c" }), variant: "secondary", onPress: async () => {
+        try {
+          await $.session.compact();
+        } catch (err) {
+          $.ui.toast(e.props.isWorking ? "Compact runs between turns. Try again when this one ends." : `Compact failed: ${err?.message ?? err}`);
+        }
       } }),
-      Button({ key: "collapse", label: collapsed ? "▸" : "▾", hotkey: "h", onPress: async () => {
+      Button({ key: "collapse", label: collapsed ? "▸" : "▾", ...(!isDesktop && { hotkey: "h" }), onPress: async () => {
         await update($, isCollapsed, () => !collapsed);
         await $.store.set("isCollapsed", !collapsed);
       } }),
@@ -273,7 +297,7 @@ export function register(on) {
         cost && { children: cost },
       ].filter(Boolean);
       if (!parts.length && !hasContext) return next(e);
-      const isWide = (e.props.bodyColumns ?? 120) >= 100;
+      const isWide = isDesktop || (e.props.bodyColumns ?? 120) >= 80;
       const half = Math.floor(((e.props.bodyColumns ?? 120) - 3) / 2);
       const barWidth = isWide ? half - 14 : 16;
 
@@ -288,8 +312,16 @@ export function register(on) {
         const percent = Text({ color: level(used), children: `${String(Math.round(used)).padStart(3)}%` });
         if (!isWide) return [line(l.kind, [`${label} `, ...bar, " ", percent, resets ? dim(` · ${span(Date.parse(l.resetsAt) - now)}`) : ""])];
         const projected = f === null ? null : `On pace for ~${Math.round(used / f)}%`;
+        const head = isDesktop
+          ? Box({ key: l.kind, flexDirection: "row", children: [
+            Box({ key: "label", width: 7, flexShrink: 0, children: Text({ children: label }) }),
+            Box({ key: "bar", flexGrow: 1, children: svgBar(Svg, `${label} ${Math.round(used)}% used`,
+              [[Math.min(100, used), HEX[level(used)]]], f === null ? null : Math.round(f * 100)) }),
+            Text({ children: " " }), percent,
+          ] })
+          : line(l.kind, [`${label} `, ...bar, " ", percent]);
         return [
-          line(l.kind, [`${label} `, ...bar, " ", percent]),
+          head,
           line(`${l.kind}-pace`, dim(`  ${[projected, resets].filter(Boolean).join(" · ")}`)),
         ];
       });
@@ -316,11 +348,18 @@ export function register(on) {
         bar = runs(Text, [...bar, ...Array.from({ length: width - filled }, () => ["░", null])]);
         const percent = Text({ color: level(contextPercent), children: `${contextPercent}% ${isToCompact ? "to compact" : "used"}` });
         const left = contextTokens !== undefined && contextLimit ? `${count(Math.max(0, contextLimit - contextTokens))} left of ${count(contextLimit)}` : "";
-        const spread = (key, a, z) => Box({ key, flexDirection: "row", justifyContent: "space-between", width, children: [Text({ children: a }), dim(z)] });
+        const name = (g) => Text({ color: isDesktop ? HEX[g.name] : g.color, children: g.name });
+        const spread = (key, a, z) => Box({ key, flexDirection: "row", justifyContent: "space-between", width: isDesktop ? "100%" : width, children: [Text({ children: a }), dim(z)] });
+        if (isDesktop) {
+          const filledPercent = Math.min(100, contextPercent);
+          const segments = total
+            ? contextGroups.map((g) => [+((g.tokens / total) * filledPercent).toFixed(2), HEX[g.name]])
+            : [[filledPercent, HEX[level(contextPercent)]]];
+          contextRows.push(svgBar(Svg, `Context ${contextPercent}% ${isToCompact ? "to compact" : "used"}`, segments));
+        } else if (isWide) contextRows.push(line("context-bar", bar));
         if (isWide) {
-          contextRows.push(line("context-bar", bar));
           contextRows.push(spread("context-label", ["Context ", percent], left));
-          for (const g of contextGroups ?? []) contextRows.push(spread(g.name, Text({ color: g.color, children: g.name }), count(g.tokens)));
+          for (const g of contextGroups ?? []) contextRows.push(spread(g.name, name(g), count(g.tokens)));
         } else {
           contextRows.push(line("context", ["Context ", ...bar, " ", percent]));
         }
@@ -328,7 +367,7 @@ export function register(on) {
 
       lines = [row("head", join(parts, sep))];
       if (isWide) {
-        const column = (key, children) => children.length && Box({ key, flexDirection: "column", width: half, children });
+        const column = (key, children) => children.length && Box({ key, flexDirection: "column", width: isDesktop ? "50%" : half, children });
         const columns = [column("limits", limitRows), column("context-column", contextRows)].filter(Boolean);
         if (columns.length) lines.push(Box({ key: "body", flexDirection: "row", gap: 3, children: columns }));
       } else {

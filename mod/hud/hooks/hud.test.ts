@@ -135,14 +135,22 @@ test("expanded: verdict and cost in the headline, limits beside the context", as
     expect((await ui.find({ type: "Text", text: /^At this pace/ }))?.text)
       .toMatch(/^At this pace the weekly limit runs out around .+, \d+[dh] \d+[hm] before it resets\.$/);
     expect(await colorOf(ui, /^At this pace/)).toBe("error");
-    expect((await ui.find({ key: "five_hour" }))?.text).toMatch(/^5 Hour [━─┃]{44}  23%$/);
     expect((await ui.find({ key: "five_hour-pace" }))?.text).toBe("  On pace for ~38% · resets in 2h 0m");
     expect((await ui.find({ key: "seven_day-pace" }))?.text).toBe("  On pace for ~129% · resets in 2d 0h");
     // 96k of a 160k auto-compact point is 60%, not the window's 48%.
     expect((await ui.find({ type: "Text", text: /^Context/ }))?.text).toBe("Context 60% to compact");
     expect((await ui.find({ type: "Text", text: /left of/ }))?.text).toBe("64k left of 160k");
-    expect((await ui.find({ key: "context-bar" }))?.text).toMatch(/^█{35}░{23}$/);
-    expect(await colorOf(ui, /^█{22}$/)).toBe("promptBorder"); // 60k of 96k's 35 cells
+    if (surface === "terminal") {
+      expect((await ui.find({ key: "five_hour" }))?.text).toMatch(/^5 Hour [━─┃]{44}  23%$/);
+      expect((await ui.find({ key: "context-bar" }))?.text).toMatch(/^█{35}░{23}$/);
+      expect(await colorOf(ui, /^█{22}$/)).toBe("promptBorder"); // 60k of 96k's 35 cells
+    } else {
+      // Drawn bars: 23% filled with the 5h window 60% through; the context's 60% split 60k:20k:16k.
+      const svg = async (alt: string) => ((await ui.findAll({ type: "Svg" })).find((n) => n.props.alt === alt)?.props.source ?? "") as string;
+      expect((await ui.find({ key: "five_hour" }))?.text).toBe("5 Hour  23%");
+      expect(await svg("5 Hour 23% used")).toMatch(/<rect x="0%" width="23%"[^>]*fill="#4ade80"\/><rect x="60%"/);
+      expect(await svg("Context 60% to compact")).toMatch(/x="0%" width="37.5%".*x="37.5%" width="12.5%".*x="50%" width="10%"/);
+    }
     expect((await ui.find({ key: "Messages" }))?.text).toBe("Messages60k");
     expect((await ui.find({ key: "Tools" }))?.text).toBe("Tools20k");
     expect((await ui.find({ key: "Other" }))?.text).toBe("Other16k");
@@ -175,12 +183,34 @@ test("a reached limit says when it resets", async ($, on) => {
   await ui.unmount();
 });
 
+test("from 80 cells the limits and the context sit side by side; the desktop always", async ($, on) => {
+  on("ui.render", () => ENGINE as never);
+  on("session.measure", (_$, e) => ({ changed: e.changed }));
+  await $.session.measure({ context: { tokens: 96000, window: 200000, percent: 48 }, rateLimits: limits([23, 2], [92, 48]), cost: { usd: 1 }, changed: ["context", "rateLimits", "cost"] });
+  for (const [surface, columns] of [["terminal", 80], ["desktop", 90], ["desktop", 60]] as const) {
+    const ui = await band($, surface, columns);
+    expect((await ui.find({ key: "body" }))?.children).toHaveLength(2);
+    await ui.unmount();
+  }
+});
+
+test("the terminal's buttons have hotkeys; the desktop's are plain", async ($, on) => {
+  on("ui.render", () => ENGINE as never);
+  on("session.measure", (_$, e) => ({ changed: e.changed }));
+  await $.session.measure({ context: { window: 200000 }, rateLimits: [], cost: { usd: 1 }, changed: ["cost"] });
+  for (const [surface, hotkeys] of [["terminal", ["c", "h"]], ["desktop", [undefined, undefined]]] as const) {
+    const ui = await band($, surface);
+    expect([(await ui.find({ key: "compact" }))?.props.hotkey, (await ui.find({ key: "collapse" }))?.props.hotkey]).toEqual(hotkeys);
+    await ui.unmount();
+  }
+});
+
 test("a narrow terminal stacks the bars and drops the detail rows", async ($, on) => {
   on("ui.render", () => ENGINE as never);
   on("session.measure", (_$, e) => ({ changed: e.changed }));
   on("session.usage", () => ({ value: { startedAt: 0, rateLimits: [], context: { window: 200000, breakdown: BREAKDOWN } } }) as never);
   await $.session.measure({ context: { tokens: 96000, window: 200000, percent: 48 }, rateLimits: limits([23, 2], [92, 48]), cost: { usd: 1 }, changed: ["context", "rateLimits", "cost"] });
-  const ui = await band($, "terminal", 80);
+  const ui = await band($, "terminal", 79);
   expect((await ui.find({ key: "five_hour" }))?.text).toMatch(/^5 Hour [━─┃]{16}  23% · 2h 0m$/);
   expect((await ui.find({ key: "context" }))?.text).toMatch(/^Context [█░]{16} 60% to compact$/);
   expect(await ui.find({ key: "five_hour-pace" })).toBeUndefined();
@@ -242,7 +272,9 @@ test("a collapsed band with nothing to show still has its buttons", async ($, on
 
 test("Compact compacts the conversation", async ($, on) => {
   let compacts = 0;
+  const toasts: string[] = [];
   on("ui.render", () => ENGINE as never);
+  on("ui.toast", (_$, e) => { toasts.push(e.text); return { value: undefined } as never; });
   on("tool.call", () => ({ result: {} }) as never);
   on("session.compact", () => { compacts++; return { skip: "test" } as never; });
   git(on, "main", "");
@@ -250,7 +282,26 @@ test("Compact compacts the conversation", async ($, on) => {
   const ui = await band($);
   await ui.press({ key: "compact" });
   expect(compacts).toBe(1);
+  expect(toasts).toEqual([]);
   await ui.unmount();
+});
+
+test("a failed Compact says why: the turn running, or the engine's own reason", async ($, on) => {
+  const toasts: string[] = [];
+  on("ui.render", () => ENGINE as never);
+  on("ui.toast", (_$, e) => { toasts.push(e.text); return { value: undefined } as never; });
+  on("session.compact", () => { throw new Error("Not enough messages to compact."); });
+  on("session.measure", (_$, e) => ({ changed: e.changed }));
+  await $.session.measure({ context: { window: 200000 }, rateLimits: [], cost: { usd: 1 }, changed: ["cost"] });
+  for (const isWorking of [false, true]) {
+    const ui = await $.ui.mount({ plugin: "hud", surface: "desktop", component: "AbovePrompt", requestId: "band", props: { hasSurvey: false, isWorking, bodyColumns: 120 } as never });
+    await ui.press({ key: "compact" });
+    await ui.unmount();
+  }
+  expect(toasts).toEqual([
+    expect.stringMatching(/^Compact failed: .+/), // core's own reason, not "between turns"
+    "Compact runs between turns. Try again when this one ends.",
+  ]);
 });
 
 test("/hud hides and shows the band, and the choice is kept across sessions", async ($, on) => {

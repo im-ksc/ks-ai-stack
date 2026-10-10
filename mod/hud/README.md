@@ -31,15 +31,15 @@ Collapsed, it's one line, and each bar becomes a circle:
 
 The limit bars and percentages are green below 70% used, yellow from 70%, and red from 90%. The circles on the collapsed line follow the same colours. A part with nothing to show is left out, and countdowns redraw every minute.
 
-On a terminal narrower than 100 columns, the context goes under the limits, and the projections and the context breakdown are dropped.
+In the desktop app, the bars are drawn as solid rounded bars that fill their column, and the limits always sit beside the context. On a terminal narrower than 80 columns, the context goes under the limits, and the projections and the context breakdown are dropped.
 
 | Control | What it does |
 | --- | --- |
-| `Compact` (`c`) | Compacts the conversation, as `/compact` does. During a turn it says to try again when the turn ends. |
+| `Compact` (`c`) | Compacts the conversation, as `/compact` does. During a turn it says to try again when the turn ends. Any other failure shows the reason Claude Code gives. |
 | `▾` / `▸` (`h`) | Collapses the band to one line, or expands it. The choice is kept across sessions. |
 | `/hud` | Hides or shows the whole band. The choice is kept across sessions. |
 
-The hotkeys work while the band has the focus: click it, or press ctrl+x tab.
+The hotkeys work in a terminal while the band has the focus: click it, or press ctrl+x tab. The desktop app shows plain buttons without them.
 
 The patterns it demonstrates:
 
@@ -76,6 +76,7 @@ The recording shows version 0.2, before the redesign. Claude works through a fou
   - 0.2.0, after use in a live terminal: the band was hard to scan and wrapped on narrow terminals. It moved to three lines, with dim labels, 10-cell bars, a token fraction for context, and the limits shown as used rather than left.
   - 0.2.1: the replay-theater hint replaced the band after each turn. Both mods now draw the band beneath them under their own rows.
   - 0.3.0: a redesign settled in an interview, with a screenshot of another usage panel as the reference. The limits gained a pace tick, a projection and a verdict. The context bar is split by category. Compact and collapse buttons were added, and the todo bar moved to the collapsed line.
+  - 0.3.1, after use in the desktop app: the band stacked at a normal window width, the buttons showed hotkey chips, and every Compact failure read as "between turns". The desktop now draws SVG bars in two columns with plain buttons, terminals split from 80 columns, and Compact shows the real reason it failed when no turn is running.
 
 ## Run it
 
