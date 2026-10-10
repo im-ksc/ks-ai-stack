@@ -1,5 +1,5 @@
-// HUD: a two-line band above the prompt. Line 1 is the work (branch, todo
-// progress), line 2 the budget (context, cost and tokens, 5h and weekly limits).
+// HUD: a three-line band above the prompt: the work (branch, todo progress),
+// context and cost, and the 5h and weekly usage limits.
 
 import { atom, read, update } from "claude-code";
 
@@ -21,11 +21,8 @@ async function refreshBranch($) {
   }
 }
 
-// A bar of `width` cells, filled to `percent`.
-function bar(percent, width) {
-  const filled = Math.max(0, Math.min(width, Math.round((percent / 100) * width)));
-  return "▓".repeat(filled) + "░".repeat(width - filled);
-}
+// Filled cells of a `width`-cell bar at `percent`.
+const cells = (percent, width) => Math.max(0, Math.min(width, Math.round((percent / 100) * width)));
 
 // Theme colour for how much of a budget is used.
 const level = (used) => (used >= 90 ? "error" : used >= 70 ? "warning" : "success");
@@ -42,12 +39,11 @@ const clock = (iso) => {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 };
 
-function todoText(items) {
+function todoProgress(items) {
   if (!items.length) return null;
   const done = items.filter((t) => t.status === "completed").length;
   const current = items.find((t) => t.status === "in_progress");
-  const label = current ? ` · ${current.activeForm || current.content}` : "";
-  return `${bar((done / items.length) * 100, 5)} ${done}/${items.length}${label}`;
+  return { done, total: items.length, label: current && (current.activeForm || current.content) };
 }
 
 export function register(on) {
@@ -110,46 +106,67 @@ export function register(on) {
 
   on("session.measure", async ($, e, next) => {
     let contextPercent = e.context.percent;
+    let contextLimit = e.context.window;
     if (e.context.tokens !== undefined) {
       try {
         // The local estimate: no API request. Absent threshold means auto-compact is off.
         const threshold = (await $.session.usage({ breakdown: "summary" })).context.breakdown?.autoCompactThreshold;
-        if (threshold) contextPercent = Math.round((e.context.tokens / threshold) * 100);
+        if (threshold) {
+          contextLimit = threshold;
+          contextPercent = Math.round((e.context.tokens / threshold) * 100);
+        }
       } catch { /* keep the window's percent */ }
     }
     const limit = (kind) => e.rateLimits.find((l) => l.kind === kind);
-    await update($, budget, () => ({ contextPercent, costUsd: e.cost?.usd, fiveHour: limit("five_hour"), weekly: limit("seven_day") }));
+    await update($, budget, () => ({
+      contextPercent, contextTokens: e.context.tokens, contextLimit,
+      costUsd: e.cost?.usd, fiveHour: limit("five_hour"), weekly: limit("seven_day"),
+    }));
     return next(e);
   });
 
   on("ui.render", { component: "AbovePrompt" }, async ($, e, next) => {
     if (e.props.hasSurvey || (await read($, isHidden))) return next(e);
-    const b = await read($, branch);
-    const work = [];
-    if (b) work.push(`⎇ ${b.name}${b.isDirty ? "*" : ""}`);
-    const todo = todoText([...(await read($, todos)), ...Object.values(await read($, tasks))]);
-    if (todo) work.push(todo);
-
-    const { contextPercent, costUsd, fiveHour, weekly } = await read($, budget);
-    const t = await read($, tokens);
-    const spend = []; // [text, colour]
-    if (contextPercent !== undefined) spend.push([`ctx ${bar(contextPercent, 5)} ${contextPercent}%`, level(contextPercent)]);
-    if (costUsd !== undefined) spend.push([`$${costUsd.toFixed(2)} ${count(t.input)} in/${count(t.output)} out`]);
-    if (fiveHour) {
-      const reset = fiveHour.resetsAt ? ` (${clock(fiveHour.resetsAt)})` : "";
-      spend.push([`5h ${bar(fiveHour.percentUsed, 4)} ${Math.round(100 - fiveHour.percentUsed)}% left${reset}`, level(fiveHour.percentUsed)]);
-    }
-    if (weekly) spend.push([`wk ${bar(weekly.percentUsed, 4)} ${Math.round(100 - weekly.percentUsed)}% left`, level(weekly.percentUsed)]);
-
-    if (!work.length && !spend.length) return next(e);
     const { Box, Text } = $.ui.resolve(e);
-    const line = (key, items) => Box({
-      key, flexDirection: "row", gap: 2,
-      children: items.map(([text, color], i) => Text({ key: `${key}${i}`, color, children: text })),
+    const dim = (children) => Text({ dimColor: true, children });
+    // A 10-cell bar: the used part in the level colour, the rest dim.
+    const gauge = (used) => {
+      const n = cells(used, 10);
+      return [Text({ color: level(used), children: "━".repeat(n) }), dim("─".repeat(10 - n))];
+    };
+
+    const b = await read($, branch);
+    const todo = todoProgress([...(await read($, todos)), ...Object.values(await read($, tasks))]);
+    const work = []; // each part is a Text's children
+    if (b) work.push([`⎇ ${b.name}${b.isDirty ? "*" : ""}`]);
+    if (todo) {
+      const n = cells((todo.done / todo.total) * 100, 5);
+      work.push(["▰".repeat(n), dim("▱".repeat(5 - n)), ` ${todo.done}/${todo.total}`, todo.label ? `  ${todo.label}` : ""]);
+    }
+
+    const { contextPercent, contextTokens, contextLimit, costUsd, fiveHour, weekly } = await read($, budget);
+    const t = await read($, tokens);
+    const spend = [];
+    if (contextPercent !== undefined) {
+      const fraction = contextTokens !== undefined && contextLimit ? `  ${count(contextTokens)}/${count(contextLimit)}` : "";
+      spend.push([dim("ctx "), ...gauge(contextPercent), ` ${contextPercent}%${fraction}`]);
+    }
+    if (costUsd !== undefined) spend.push([`$${costUsd.toFixed(2)}  ${count(t.input)}`, dim(" in · "), count(t.output), dim(" out")]);
+    const limits = [];
+    if (fiveHour) {
+      const reset = fiveHour.resetsAt ? [dim("  reset "), clock(fiveHour.resetsAt)] : [];
+      limits.push([dim("5h  "), ...gauge(fiveHour.percentUsed), ` ${Math.round(fiveHour.percentUsed)}%`, ...reset]);
+    }
+    if (weekly) limits.push([dim("wk "), ...gauge(weekly.percentUsed), ` ${Math.round(weekly.percentUsed)}%`]);
+
+    const lines = [["work", work], ["spend", spend], ["limits", limits]].filter(([, parts]) => parts.length);
+    if (!lines.length) return next(e);
+    return Box({
+      flexDirection: "column",
+      children: lines.map(([key, parts]) => Box({
+        key, flexDirection: "row", gap: 3,
+        children: parts.map((children) => Text({ children })),
+      })),
     });
-    const lines = [];
-    if (work.length) lines.push(line("work", work.map((text) => [text])));
-    if (spend.length) lines.push(line("spend", spend));
-    return Box({ flexDirection: "column", children: lines });
   });
 }

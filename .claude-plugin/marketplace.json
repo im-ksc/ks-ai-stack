@@ -12,8 +12,8 @@
     {
       "name": "hud",
       "source": "./mod/hud",
-      "description": "A two-line band above the prompt: branch, todo progress, context, cost and usage limits.",
-      "version": "0.1.0"
+      "description": "A three-line band above the prompt: branch, todo progress, context, cost and usage limits.",
+      "version": "0.2.0"
     }
   ]
 }
