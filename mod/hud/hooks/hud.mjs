@@ -330,7 +330,7 @@ export function register(on) {
         const resets = l.resetsAt ? `resets in ${span(Date.parse(l.resetsAt) - now)}` : null;
         const percent = Text({ color: level(used), children: `${String(Math.round(used)).padStart(3)}%` });
         if (!isWide) return [line(l.kind, [`${label} `, ...bar, " ", percent, resets ? dim(` · ${span(Date.parse(l.resetsAt) - now)}`) : ""])];
-        const projected = f === null ? "Too early to project" : `On pace for ~${Math.round(used / f)}%`;
+        const projected = f === null ? (l.resetsAt ? "Too early to project" : null) : `On pace for ~${Math.round(used / f)}%`;
         const head = isDesktop
           ? Box({ key: l.kind, flexDirection: "row", children: [
             Box({ key: "label", width: 7, flexShrink: 0, children: Text({ children: label }) }),

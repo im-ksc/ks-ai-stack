@@ -142,6 +142,9 @@ test("cruising, the verdict names the weekly reset's day", async ($, on) => {
   // Under 10% into the 5-hour window: no tick, and the pace line says it's early.
   expect((await ui.find({ key: "five_hour" }))?.text).toMatch(/^5 Hour [━─]{44}  10%$/);
   expect((await ui.find({ key: "five_hour-pace" }))?.text).toBe("  Too early to project · resets in 4h 45m");
+  // With no reset time it isn't early, just unknown: the line says nothing.
+  await $.session.measure({ context: { window: 200000 }, rateLimits: [{ kind: "five_hour", percentUsed: 10 }, rateLimits[1]], cost: { usd: 0 }, changed: ["rateLimits"] });
+  expect((await ui.find({ key: "five_hour-pace" }))?.text).toBe("  ");
   await ui.unmount();
 });
 
