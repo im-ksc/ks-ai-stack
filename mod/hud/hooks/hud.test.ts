@@ -89,7 +89,7 @@ test("collapsed, todo progress counts TodoWrite and Task items", async ($, on) =
   const ui = await band($);
   await ui.press({ key: "collapse" });
   // 2 of 4 done is half a circle.
-  expect((await ui.find({ key: "head" }))?.text).toMatch(/^⎇ main {2}◑ 2\/4/);
+  expect((await ui.find({ key: "head" }))?.text).toMatch(/^⎇ main │ ◑ 2\/4/);
   await ui.unmount();
 });
 
@@ -132,9 +132,12 @@ test("expanded: verdict and cost in the headline, limits beside the context", as
   for (const surface of ["terminal", "desktop"] as const) {
     const ui = await band($, surface);
     expect((await ui.find({ type: "Text", text: /^\$/ }))?.text).toBe("$0.42 · 1.2M in · 38k out");
-    expect((await ui.find({ type: "Text", text: /^At this pace/ }))?.text)
-      .toMatch(/^At this pace the weekly limit runs out around .+, \d+[dh] \d+[hm] before it resets\.$/);
-    expect(await colorOf(ui, /^At this pace/)).toBe("error");
+    expect((await ui.find({ type: "Text", text: /^Easy, tiger/ }))?.text)
+      .toMatch(/^Easy, tiger\. Weekly runs dry .+, \d+[dh] \d+[hm] early\.$/);
+    expect(await colorOf(ui, /^Easy, tiger/)).toBe("error");
+    // Each limit's bar and its pace line stay together; the two pairs spread down the column.
+    expect((await ui.find({ key: "limits" }))?.children).toHaveLength(2);
+    expect((await ui.find({ key: "five_hour-group" }))?.children).toHaveLength(2);
     expect((await ui.find({ key: "five_hour-pace" }))?.text).toBe("  On pace for ~38% · resets in 2h 0m");
     expect((await ui.find({ key: "seven_day-pace" }))?.text).toBe("  On pace for ~129% · resets in 2d 0h");
     // 96k of a 160k auto-compact point is 60%, not the window's 48%.
@@ -158,15 +161,15 @@ test("expanded: verdict and cost in the headline, limits beside the context", as
   }
 });
 
-test("on track, the verdict names the weekly reset's day", async ($, on) => {
+test("cruising, the verdict names the weekly reset's day", async ($, on) => {
   on("ui.render", () => ENGINE as never);
   on("session.measure", (_$, e) => ({ changed: e.changed }));
   const rateLimits = limits([10, 4.75], [20, 100]);
   await $.session.measure({ context: { window: 200000 }, rateLimits, cost: { usd: 0 }, changed: ["rateLimits"] });
   const ui = await band($);
   const day = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][new Date(rateLimits[1].resetsAt).getDay()];
-  expect((await ui.find({ type: "Text", text: /^On track/ }))?.text).toBe(`On track. You should reach ${day}'s reset with room to spare.`);
-  expect(await colorOf(ui, /^On track/)).toBe("success");
+  expect((await ui.find({ type: "Text", text: /^Cruising/ }))?.text).toBe(`Cruising. Plenty left for ${day}.`);
+  expect(await colorOf(ui, /^Cruising/)).toBe("success");
   // Under 10% into the 5-hour window: no tick and no projection yet.
   expect((await ui.find({ key: "five_hour" }))?.text).toMatch(/^5 Hour [━─]{44}  10%$/);
   expect((await ui.find({ key: "five_hour-pace" }))?.text).toBe("  resets in 4h 45m");
@@ -178,8 +181,8 @@ test("a reached limit says when it resets", async ($, on) => {
   on("session.measure", (_$, e) => ({ changed: e.changed }));
   await $.session.measure({ context: { window: 200000 }, rateLimits: limits([40, 3], [100, 30]), cost: { usd: 0 }, changed: ["rateLimits"] });
   const ui = await band($);
-  expect((await ui.find({ type: "Text", text: /limit reached/ }))?.text).toMatch(/^Weekly limit reached\. Resets (\w+day )?\d\d:\d\d\.$/);
-  expect(await colorOf(ui, /limit reached/)).toBe("error");
+  expect((await ui.find({ type: "Text", text: /tapped out/ }))?.text).toMatch(/^Weekly's tapped out\. Back (\w+day )?\d\d:\d\d\.$/);
+  expect(await colorOf(ui, /tapped out/)).toBe("error");
   await ui.unmount();
 });
 
@@ -246,7 +249,7 @@ test("without a subscription or auto-compact the band falls back", async ($, on)
   expect((await ui.find({ key: "context-bar" }))?.text).toMatch(/^█{44}░{14}$/);
   expect((await ui.find({ type: "Text", text: /^\$/ }))?.text).toBe("$3.00 · 0 in · 0 out");
   expect(await ui.find({ key: "limits" })).toBeUndefined();
-  expect(await ui.find({ type: "Text", text: /^On track/ })).toBeUndefined();
+  expect(await ui.find({ type: "Text", text: /^Cruising/ })).toBeUndefined();
   await ui.unmount();
 });
 
@@ -264,7 +267,7 @@ test("collapsed, the band is one line of circles, kept across sessions", async (
   expect((await ui.find({ key: "collapse" }))?.props.label).toBe("▾");
   await ui.press({ key: "collapse" });
   expect(stored.get("isCollapsed")).toBe(true);
-  expect((await ui.find({ key: "head" }))?.text).toMatch(/^⎇ main {2}5h ◕ 81% {2}wk ◔ 20% {2}ctx ◔ 30% {2}\$0\.42/);
+  expect((await ui.find({ key: "head" }))?.text).toMatch(/^⎇ main │ 5h ◕ 81% │ wk ◔ 20% │ ctx ◔ 30% │ \$0\.42/);
   expect((await ui.find({ key: "collapse" }))?.props.label).toBe("▸");
   expect(await ui.find({ key: "body" })).toBeUndefined();
   await ui.unmount();
@@ -287,38 +290,40 @@ test("a collapsed band with nothing to show still has its buttons", async ($, on
   await ui.unmount();
 });
 
-test("Compact compacts the conversation", async ($, on) => {
-  let compacts = 0;
-  const toasts: string[] = [];
-  on("ui.render", () => ENGINE as never);
-  on("ui.toast", (_$, e) => { toasts.push(e.text); return { value: undefined } as never; });
-  on("tool.call", () => ({ result: {} }) as never);
-  on("session.compact", () => { compacts++; return { skip: "test" } as never; });
-  git(on, "main", "");
-  await $.tool.call({ tool: "Bash", command: "true" } as never);
-  const ui = await band($);
-  await ui.press({ key: "compact" });
-  expect(compacts).toBe(1);
-  expect(toasts).toEqual([]);
-  await ui.unmount();
-});
+// $.clock.after fires at once in these tests; the /compact it starts settles a few ticks later.
+const settled = () => new Promise((resolve) => setTimeout(resolve, 20));
 
-test("a failed Compact says why: the turn running, or the engine's own reason", async ($, on) => {
+test("Compact runs /compact, during a turn too, so it works where the session can't compact itself", async ($, on) => {
+  const runs: string[] = [];
   const toasts: string[] = [];
+  on("clock.after", () => ({ value: undefined }) as never);
   on("ui.render", () => ENGINE as never);
   on("ui.toast", (_$, e) => { toasts.push(e.text); return { value: undefined } as never; });
-  on("session.compact", () => { throw new Error("Not enough messages to compact."); });
+  on("command.run", (_$, e) => { runs.push(e.command); return { text: "" } as never; });
   on("session.measure", (_$, e) => ({ changed: e.changed }));
   await $.session.measure({ context: { window: 200000 }, rateLimits: [], cost: { usd: 1 }, changed: ["cost"] });
   for (const isWorking of [false, true]) {
     const ui = await $.ui.mount({ plugin: "hud", surface: "desktop", component: "AbovePrompt", requestId: "band", props: { hasSurvey: false, isWorking, bodyColumns: 120 } as never });
     await ui.press({ key: "compact" });
+    await settled();
     await ui.unmount();
   }
-  expect(toasts).toEqual([
-    expect.stringMatching(/^Compact failed: .+/), // core's own reason, not "between turns"
-    "Compact runs between turns. Try again when this one ends.",
-  ]);
+  expect(runs).toEqual(["compact", "compact"]);
+  expect(toasts).toEqual([]);
+});
+
+test("a failed Compact says why", async ($, on) => {
+  const toasts: string[] = [];
+  on("clock.after", () => ({ value: undefined }) as never);
+  on("ui.render", () => ENGINE as never);
+  on("ui.toast", (_$, e) => { toasts.push(e.text); return { value: undefined } as never; });
+  on("session.measure", (_$, e) => ({ changed: e.changed }));
+  await $.session.measure({ context: { window: 200000 }, rateLimits: [], cost: { usd: 1 }, changed: ["cost"] });
+  const ui = await band($, "desktop");
+  await ui.press({ key: "compact" });
+  await settled();
+  await ui.unmount();
+  expect(toasts).toEqual([expect.stringMatching(/^Compact failed: .+/)]);
 });
 
 test("/hud hides and shows the band, and the choice is kept across sessions", async ($, on) => {
