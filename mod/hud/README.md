@@ -11,10 +11,10 @@ Weekly ━━━━━━━━┃━━━━───────────�
                                                            Other                                                    18k
 ```
 
-Collapsed, it's one line, and each bar becomes a circle:
+Collapsed, it's one line spread across the band, and each bar becomes a ring (a circle glyph in a terminal):
 
 ```text
-⎇ feat/hud* │ ◕ 3/5 │ 5h ◕ 81% │ wk ◔ 20% │ ctx ◔ 30% │ $0.42                                           [ Compact ] [ ▸ ]
+   ⎇ feat/hud*   │   ◕ 5 Hour 81% ↻ 14:00   │   ◔ Week 20% ↻ Wed 09:00   │   ◔ Context 30%   │   $0.42   [ Compact ] [ ▸ ]
 ```
 
 ## What this shows
@@ -27,16 +27,16 @@ Collapsed, it's one line, and each bar becomes a circle:
 | `5 Hour ━━━┃━── 81%` | How much of the 5-hour window is used. The `┃` marks how much of the window has passed, so a bar that fills past it is ahead of pace. The line under it projects the use at the reset and counts down to it. The tick and projection appear once 10% of the window has passed. |
 | `Weekly ━━━┃━── 20%` | The same for the weekly window. |
 | `████▓▒░░ Context 24% to compact` | Context used, measured against the point where auto-compact runs. The bar is split into messages, tools and everything else, in the colours `/context` uses, with each part's tokens listed below it. With auto-compact off, it's measured against the model's context window and reads `used`. |
-| `◕ 3/5` | Collapsed only: the todo list Claude keeps with TodoWrite, and the tasks it keeps with TaskCreate and TaskUpdate, counted together. Subagents' todos aren't counted. Hidden when there are no todos. |
+| `↻ 14:00` | Collapsed only: when each limit resets. The time alone for today, the day too for later. |
 
-The limit bars and percentages are green below 70% used, yellow from 70%, and red from 90%. The circles on the collapsed line follow the same colours. A part with nothing to show is left out, and countdowns redraw every minute.
+The limit bars and percentages are green below 70% used, yellow from 70%, and red from 90%. The rings on the collapsed line follow the same colours. A part with nothing to show is left out, and countdowns redraw every minute.
 
 In the desktop app, the bars are drawn as solid rounded bars that fill their column, and the limits always sit beside the context. On a terminal narrower than 80 columns, the context goes under the limits, and the projections and the context breakdown are dropped.
 
 | Control | What it does |
 | --- | --- |
 | `Compact` (`c`) | Runs `/compact`. Pressed during a turn, it runs once the turn ends. A failure shows the reason Claude Code gives. |
-| `▾` / `▸` (`h`) | Collapses the band to one line, or expands it. The choice is kept across sessions. The desktop app draws a larger triangle without button shading. |
+| `▾` / `▸` (`h`) | Collapses the band to one line, or expands it. The choice is kept across sessions. The desktop app draws a larger triangle without button shading, with the click area centred on it. |
 | `/hud` | Hides or shows the whole band. The choice is kept across sessions. |
 
 The hotkeys work in a terminal while the band has the focus: click it, or press ctrl+x tab. The desktop app shows plain buttons without them.
@@ -79,6 +79,7 @@ The recording shows version 0.2, before the redesign. Claude works through a fou
   - 0.3.1, after use in the desktop app: the band stacked at a normal window width, the buttons showed hotkey chips, and every Compact failure read as "between turns". The desktop now draws SVG bars in two columns with plain buttons, terminals split from 80 columns, and Compact shows the real reason it failed when no turn is running.
   - 0.3.2: the two columns sat right under the headline, the usage column was shorter than the context column, and the collapse button was shaded. The body now has a gap above it, the usage rows spread to the context column's height, and the desktop's collapse control is a bigger triangle with no shading.
   - 0.3.3: Compact failed in the desktop app, which can't compact from a mod directly, so the button now runs `/compact` and waits for a running turn. The verdicts are shorter, the collapsed line has dividers, each limit's bar stays with its reset line, and the desktop's collapse click area covers the whole triangle.
+  - 0.3.4: the collapse click area still sat left of the triangle, because spaces in the desktop's font are narrower than cells. It's now centred on the triangle. The collapsed line, modelled on a screenshot of another usage line, spreads across the band with full labels, each limit's reset time and, in the desktop app, SVG rings. The todo count was dropped from it.
 
 ## Run it
 
@@ -129,7 +130,7 @@ No environment variables or configuration.
 - The verdict and the projections assume use carries on at the average rate since the window started.
 - The context breakdown groups `/context`'s rows by name: `Messages`, rows with "tool" in the name, and the rest.
 - The context percentage uses the engine's local estimate of the auto-compact point, which sends no API request.
-- Todos and token counts are kept for the session. `/clear` empties them. After `--resume` the token counts start from zero while the cost doesn't, because the cost comes from the engine's ledger.
+- Token counts are kept for the session. `/clear` empties them. After `--resume` the token counts start from zero while the cost doesn't, because the cost comes from the engine's ledger.
 - The branch isn't refreshed when you change branches outside Claude Code. It updates after Claude's next Bash call or the next session.
 - The band above the prompt is shared. Another mod's band, such as the replay-theater hint, shows under the HUD. Which band sits on top depends on the order Claude Code runs the mods in.
 - A gateway's `spend_limit` window isn't shown.

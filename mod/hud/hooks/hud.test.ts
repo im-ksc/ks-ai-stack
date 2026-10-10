@@ -73,37 +73,6 @@ test("another mod's band still shows under the HUD", async ($, on) => {
   await ui.unmount();
 });
 
-test("collapsed, todo progress counts TodoWrite and Task items", async ($, on) => {
-  on("ui.render", () => ENGINE as never);
-  store(on);
-  git(on, "main", "");
-  on("tool.call", (_$, e) => ({ result: e.tool === "TaskCreate" ? { task: { id: "7", subject: "x" } } : {} }) as never);
-  await $.tool.call({ tool: "TodoWrite", todos: [
-    { content: "Write tests", status: "completed", activeForm: "Writing tests" },
-    { content: "Run tests", status: "in_progress", activeForm: "Running tests" },
-    { content: "Ship", status: "pending", activeForm: "Shipping" },
-  ] });
-  await $.tool.call({ tool: "TaskCreate", subject: "Docs", description: "", activeForm: "Writing docs" });
-  await $.tool.call({ tool: "TaskUpdate", taskId: "7", status: "completed" });
-  await $.tool.call({ tool: "Bash", command: "true" } as never);
-  const ui = await band($);
-  await ui.press({ key: "collapse" });
-  // 2 of 4 done is half a circle.
-  expect((await ui.find({ key: "head" }))?.text).toMatch(/^⎇ main │ ◑ 2\/4/);
-  await ui.unmount();
-});
-
-test("a subagent's todos and a deleted task don't count", async ($, on) => {
-  on("ui.render", () => ENGINE as never);
-  on("tool.call", (_$, e) => ({ result: e.tool === "TaskCreate" ? { task: { id: "1", subject: "x" } } : {} }) as never);
-  await $.tool.call({ tool: "TodoWrite", agentId: "sub", todos: [{ content: "a", status: "pending", activeForm: "a" }] } as never);
-  await $.tool.call({ tool: "TaskCreate", subject: "Gone", description: "" });
-  await $.tool.call({ tool: "TaskUpdate", taskId: "1", status: "deleted" });
-  const ui = await band($);
-  expect(await ui.find({ type: "Text", text: "engine" })).toBeDefined();
-  await ui.unmount();
-});
-
 test("a Bash call refreshes the branch", async ($, on) => {
   on("ui.render", () => ENGINE as never);
   on("tool.call", () => ({ result: {} }) as never);
@@ -215,13 +184,17 @@ test("the desktop's collapse is a chromeless button over a drawn triangle", asyn
   const stored = store(on);
   on("ui.render", () => ENGINE as never);
   on("session.measure", (_$, e) => ({ changed: e.changed }));
-  await $.session.measure({ context: { window: 200000 }, rateLimits: [], cost: { usd: 1 }, changed: ["cost"] });
+  await $.session.measure({ context: { tokens: 48000, window: 200000, percent: 24 }, rateLimits: [], cost: { usd: 1 }, changed: ["context", "cost"] });
   const ui = await band($, "desktop");
   expect((await ui.find({ key: "collapse" }))?.props.plain).toBe(true);
   expect((await ui.findAll({})).some((n) => n.props.alt === "Collapse")).toBe(true);
   await ui.press({ key: "collapse" });
   expect(stored.get("isCollapsed")).toBe(true);
   expect((await ui.findAll({})).some((n) => n.props.alt === "Expand")).toBe(true);
+  // Collapsed, each bar is a ring.
+  expect((await ui.findAll({})).filter((n) => /used$/.test(n.props.alt ?? "")).map((n) => n.props.source)).toEqual([expect.stringMatching(/stroke-dasharray="\d+ 100"/)]);
+  // The press is centred on the triangle, as wide as its box.
+  expect((await ui.find({ key: "press" }))?.props).toMatchObject({ width: 4, justifyContent: "center" });
   await ui.unmount();
 });
 
@@ -267,7 +240,8 @@ test("collapsed, the band is one line of circles, kept across sessions", async (
   expect((await ui.find({ key: "collapse" }))?.props.label).toBe("▾");
   await ui.press({ key: "collapse" });
   expect(stored.get("isCollapsed")).toBe(true);
-  expect((await ui.find({ key: "head" }))?.text).toMatch(/^⎇ main │ 5h ◕ 81% │ wk ◔ 20% │ ctx ◔ 30% │ \$0\.42/);
+  expect((await ui.find({ key: "parts" }))?.text).toMatch(/^⎇ main │ ◕ 5 Hour 81% ↻ (\w{3} )?\d\d:\d\d │ ◔ Week 20% ↻ \w{3} \d\d:\d\d │ ◔ Context 30% │ \$0\.42$/);
+  expect((await ui.find({ key: "parts" }))?.props.justifyContent).toBe("space-evenly");
   expect((await ui.find({ key: "collapse" }))?.props.label).toBe("▸");
   expect(await ui.find({ key: "body" })).toBeUndefined();
   await ui.unmount();
@@ -358,20 +332,17 @@ test("a hidden band stays hidden in a new session", async ($, on) => {
   await ui.unmount();
 });
 
-test("/clear empties the todos and token counts", async ($, on) => {
+test("/clear empties the token counts", async ($, on) => {
   on("ui.render", () => ENGINE as never);
   on("tool.call", () => ({ result: {} }) as never);
   on("session.end", (_$, e) => ({ sessionId: e.sessionId }) as never);
   on("session.measure", (_$, e) => ({ changed: e.changed }));
   on("turn.complete", () => ({ text: "" }));
   store(on);
-  await $.tool.call({ tool: "TodoWrite", todos: [{ content: "a", status: "pending", activeForm: "a" }] });
   await $.turn.complete({ turnId: "t1", reason: "answer", answer: "", durationMs: 1, isAborted: false, usage: { input_tokens: 5000, cache_creation_input_tokens: 0, cache_read_input_tokens: 0, output_tokens: 2000, model: "m" } });
   await $.session.end({ reason: "clear", sessionId: "s1" } as never);
   await $.session.measure({ context: { window: 200000 }, rateLimits: [], cost: { usd: 0 }, changed: ["cost"] });
   const ui = await band($);
   expect((await ui.find({ type: "Text", text: /^\$/ }))?.text).toBe("$0.00 · 0 in · 0 out");
-  await ui.press({ key: "collapse" });
-  expect(await ui.find({ type: "Text", text: /^[○◔◑◕●] \d/ })).toBeUndefined();
   await ui.unmount();
 });
