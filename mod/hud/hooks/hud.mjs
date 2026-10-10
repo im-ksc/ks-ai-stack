@@ -254,20 +254,12 @@ export function register(on) {
       await update($, isCollapsed, () => !collapsed);
       await $.store.set("isCollapsed", !collapsed);
     };
-    // The desktop shades every button but a plain one, so a bigger triangle is drawn and a
-    // chromeless button laid over it takes the click.
-    const triangle = () => Box({ key: "collapse-box", width: 4, height: 1, overflow: "hidden", children: [
-      Box({ key: "glyph", position: "absolute", top: 0, left: 0, width: 4, height: 1, alignItems: "center", justifyContent: "center",
-        children: Svg({ alt: collapsed ? "Expand" : "Collapse", width: 12, height: 8,
-          source: `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="8"><path d="${collapsed ? "M1 7 6 1 11 7z" : "M1 1h10L6 7z"}" fill="#a0a0a0"/></svg>` }) }),
-      // Centred like the triangle and wider than it: spaces in the desktop's font are narrow.
-      // Transparent, as the button cuts the wide label to an ellipsis.
-      Box({ key: "press", position: "absolute", top: 0, left: 0, width: 4, height: 1, alignItems: "center", justifyContent: "center",
-        children: Button({ key: "collapse", label: "\u2003\u2003", children: Text({ color: "#00000000", children: "\u2003\u2003" }), plain: true, hover: { backgroundColor: "#00000000" }, onPress: toggle }) }),
-    ] });
     const buttons = [
       Button({ key: "compact", label: "Compact", ...(!isDesktop && { hotkey: "c" }), variant: "secondary", onPress: compact }),
-      isDesktop ? triangle() : Button({ key: "collapse", label: collapsed ? "▸" : "▾", hotkey: "h", onPress: toggle }),
+      // The desktop shades every button but a plain one.
+      isDesktop
+        ? Button({ key: "collapse", label: collapsed ? "▲" : "▼", plain: true, onPress: toggle })
+        : Button({ key: "collapse", label: collapsed ? "▸" : "▾", hotkey: "h", onPress: toggle }),
     ];
     // Parts kept whole; the one marked `shrinks` is cut with … when the row is too narrow.
     const row = (key, parts) => Box({
