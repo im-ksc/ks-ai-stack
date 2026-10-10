@@ -27,7 +27,7 @@ test("the band shows the branch with a dirty mark", async ($, on) => {
   await $.session.start({ cwd: "/p" } as never);
   for (const surface of ["terminal", "desktop"] as const) {
     const ui = await band($, surface);
-    expect(await ui.find({ type: "Text", text: "⎇ feat/hud*" })).toBeDefined();
+    expect((await ui.find({ type: "Text", text: /^⎇/ }))?.text).toBe("⎇ feat/hud*");
     await ui.unmount();
   }
 });
@@ -44,7 +44,7 @@ test("todo progress counts TodoWrite and Task items and names the one in progres
   await $.tool.call({ tool: "TaskUpdate", taskId: "7", status: "completed" });
   const ui = await band($);
   // 2 of 4 done fills 2.5 of 5 cells, rounded to 3.
-  expect(await ui.find({ type: "Text", text: "▓▓▓░░ 2/4 · Running tests" })).toBeDefined();
+  expect((await ui.find({ type: "Text", text: /[▰▱]/ }))?.text).toBe("▰▰▰▱▱ 2/4  Running tests");
   await ui.unmount();
 });
 
@@ -65,11 +65,11 @@ test("a Bash call refreshes the branch", async ($, on) => {
   git(on, "main", "");
   await $.tool.call({ tool: "Bash", command: "git checkout main", agentId: "sub" } as never);
   const ui = await band($);
-  expect(await ui.find({ type: "Text", text: "⎇ main" })).toBeDefined();
+  expect((await ui.find({ type: "Text", text: /^⎇/ }))?.text).toBe("⎇ main");
   await ui.unmount();
 });
 
-test("the budget line shows context to auto-compact, cost, tokens and limits", async ($, on) => {
+test("the budget lines show context to auto-compact, cost, tokens and limits", async ($, on) => {
   on("ui.render", () => ENGINE as never);
   on("session.measure", (_$, e) => ({ changed: e.changed }));
   on("session.usage", () => ({ value: { startedAt: 0, rateLimits: [], context: { window: 200000, breakdown: { autoCompactThreshold: 160000 } } } }) as never);
@@ -89,10 +89,12 @@ test("the budget line shows context to auto-compact, cost, tokens and limits", a
   for (const surface of ["terminal", "desktop"] as const) {
     const ui = await band($, surface);
     // 96k of a 160k auto-compact point is 60%, not the window's 48%.
-    expect((await ui.find({ type: "Text", text: "ctx ▓▓▓░░ 60%" }))?.props.color).toBe("success");
-    expect(await ui.find({ type: "Text", text: "$0.42 1.2M in/38k out" })).toBeDefined();
-    expect((await ui.find({ type: "Text", text: /^5h ▓░░░ 77% left \(\d\d:\d\d\)$/ }))?.props.color).toBe("success");
-    expect((await ui.find({ type: "Text", text: "wk ▓▓▓▓ 8% left" }))?.props.color).toBe("error");
+    expect((await ui.find({ type: "Text", text: /^ctx/ }))?.text).toBe("ctx ━━━━━━──── 60%  96k/160k");
+    expect((await ui.find({ type: "Text", text: /^━{6}$/ }))?.props.color).toBe("success");
+    expect((await ui.find({ type: "Text", text: /^\$/ }))?.text).toBe("$0.42  1.2M in · 38k out");
+    expect((await ui.find({ type: "Text", text: /^5h/ }))?.text).toMatch(/^5h  ━━──────── 23%  reset \d\d:\d\d$/);
+    expect((await ui.find({ type: "Text", text: /^wk/ }))?.text).toBe("wk ━━━━━━━━━─ 92%");
+    expect((await ui.find({ type: "Text", text: /^━{9}$/ }))?.props.color).toBe("error");
     await ui.unmount();
   }
 });
@@ -103,9 +105,10 @@ test("without a subscription or auto-compact the line falls back", async ($, on)
   on("session.usage", () => ({ value: { startedAt: 0, rateLimits: [], context: { window: 200000, breakdown: {} } } }) as never);
   await $.session.measure({ context: { tokens: 150000, window: 200000, percent: 75 }, rateLimits: [], cost: { usd: 3 }, changed: ["context", "cost"] });
   const ui = await band($);
-  expect((await ui.find({ type: "Text", text: "ctx ▓▓▓▓░ 75%" }))?.props.color).toBe("warning");
-  expect(await ui.find({ type: "Text", text: "$3.00 0 in/0 out" })).toBeDefined();
-  expect(await ui.find({ type: "Text", text: /^5h|^wk/ })).toBeUndefined();
+  expect((await ui.find({ type: "Text", text: /^ctx/ }))?.text).toBe("ctx ━━━━━━━━── 75%  150k/200k");
+  expect((await ui.find({ type: "Text", text: /^━{8}$/ }))?.props.color).toBe("warning");
+  expect((await ui.find({ type: "Text", text: /^\$/ }))?.text).toBe("$3.00  0 in · 0 out");
+  expect(await ui.find({ key: "limits" })).toBeUndefined();
   await ui.unmount();
 });
 
@@ -125,7 +128,7 @@ test("/hud hides and shows the band, and the choice is kept across sessions", as
   expect(stored.get("isHidden")).toBe(true);
   expect((await $.command.run({ command: "hud", args: "" } as never)).text).toMatch(/shown/);
   ui = await band($);
-  expect(await ui.find({ type: "Text", text: "⎇ main" })).toBeDefined();
+  expect((await ui.find({ type: "Text", text: /^⎇/ }))?.text).toBe("⎇ main");
   await ui.unmount();
 });
 
@@ -152,7 +155,7 @@ test("/clear empties the todos and token counts", async ($, on) => {
   await $.session.end({ reason: "clear", sessionId: "s1" } as never);
   await $.session.measure({ context: { window: 200000 }, rateLimits: [], cost: { usd: 0 }, changed: ["cost"] });
   const ui = await band($);
-  expect(await ui.find({ type: "Text", text: /\d\/\d/ })).toBeUndefined();
-  expect(await ui.find({ type: "Text", text: "$0.00 0 in/0 out" })).toBeDefined();
+  expect(await ui.find({ type: "Text", text: /[▰▱]/ })).toBeUndefined();
+  expect((await ui.find({ type: "Text", text: /^\$/ }))?.text).toBe("$0.00  0 in · 0 out");
   await ui.unmount();
 });

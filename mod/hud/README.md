@@ -1,10 +1,11 @@
 # HUD
 
-A Claude Code mod that draws a two-line band above the prompt. The first line shows the work: the git branch and todo progress. The second line shows the budget: context used, the session's cost and tokens, and how much of the 5-hour and weekly usage limits is left.
+A Claude Code mod that draws a three-line band above the prompt. The first line shows the work: the git branch and todo progress. The second shows context used and the session's cost and tokens. The third shows how much of the 5-hour and weekly usage limits is used. Labels and the empty part of each bar are dim, so the numbers stand out.
 
 ```text
-⎇ feat/hud*  ▓▓▓░░ 3/5 · Running tests
-ctx ▓▓▓░░ 61%  $0.42 1.2M in/38k out  5h ▓░░░ 77% left (15:40)  wk ▓▓░░ 52% left
+⎇ feat/hud*   ▰▰▰▱▱ 3/5  Running tests
+ctx ━━━━━━──── 61%  156k/256k   $0.42  1.2M in · 38k out
+5h  ━━──────── 23%  reset 15:40   wk ━━━━━───── 48%
 ```
 
 ## What this shows
@@ -12,13 +13,13 @@ ctx ▓▓▓░░ 61%  $0.42 1.2M in/38k out  5h ▓░░░ 77% left (15:40)
 | Part | What it reads |
 | --- | --- |
 | `⎇ feat/hud*` | `git branch --show-current`, and `*` when `git status --porcelain` lists changes. Read at session start and after every Bash call. Hidden outside a git repository and on a detached HEAD. |
-| `▓▓▓░░ 3/5 · Running tests` | The todo list Claude keeps with TodoWrite, and the tasks it keeps with TaskCreate and TaskUpdate, counted together. The text is the in-progress item. Subagents' todos aren't counted. Hidden when there are no todos. |
-| `ctx ▓▓▓░░ 61%` | Context used, measured against the point where auto-compact runs. With auto-compact off, it's measured against the model's context window. |
-| `$0.42 1.2M in/38k out` | The cost `/cost` reports. On a Pro or Max subscription this is what the same tokens would cost at API prices, not a charge. Input counts uncached, cache-write and cache-read tokens. Subagents' tokens are included. |
-| `5h ▓░░░ 77% left (15:40)` | The 5-hour usage window: the bar fills with use, the text shows what's left and when the window resets, in local time. |
-| `wk ▓▓░░ 52% left` | The weekly usage window, without the reset time. |
+| `▰▰▰▱▱ 3/5  Running tests` | The todo list Claude keeps with TodoWrite, and the tasks it keeps with TaskCreate and TaskUpdate, counted together. The text is the in-progress item. Subagents' todos aren't counted. Hidden when there are no todos. |
+| `ctx ━━━━━━──── 61%  156k/256k` | Context used, measured against the point where auto-compact runs, as a percentage and in tokens. With auto-compact off, it's measured against the model's context window. |
+| `$0.42  1.2M in · 38k out` | The cost `/cost` reports. On a Pro or Max subscription this is what the same tokens would cost at API prices, not a charge. Input counts uncached, cache-write and cache-read tokens. Subagents' tokens are included. |
+| `5h ━━──────── 23%  reset 15:40` | The 5-hour usage window: how much is used, and when the window resets, in local time. |
+| `wk ━━━━━───── 48%` | The weekly usage window, without the reset time. |
 
-The context, 5-hour and weekly parts are green below 70% used, yellow from 70%, and red from 90%.
+The filled part of the context, 5-hour and weekly bars is green below 70% used, yellow from 70%, and red from 90%. A line with nothing to show is left out.
 
 `/hud` hides or shows the band. The choice is kept across sessions.
 
@@ -47,6 +48,7 @@ The patterns it demonstrates:
   - The request asked for a cost estimate from tokens and a price table. The engine already reports the session's cost per model, so the band shows that figure and the token counts beside it.
   - The layout, colours, the dirty mark and the `/hud` toggle were settled in an interview before building.
   - Tested with `claude plugin test` only. It hasn't been tried in a live terminal yet.
+  - 0.2.0, after use in a live terminal: the band was hard to scan and wrapped on narrow terminals. It moved to three lines, with dim labels, 10-cell bars, a token fraction for context, and the limits shown as used rather than left.
 
 ## Run it
 
