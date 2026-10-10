@@ -5,6 +5,7 @@ Personal Claude Code mods (plugins built on function hooks), published as one pl
 ## Layout
 
 - `.claude-plugin/marketplace.json`: the marketplace manifest. It lists every mod.
+- `.agents/skills/<name>/`: agent skills, one per folder. Codex and Gemini CLI read this path. `.claude/skills` is a symlink to it for Claude Code, so never replace it with a real folder.
 - `mod/<name>/`: one mod per folder, itself a plugin:
   - `.claude-plugin/plugin.json`: the mod's name, version, description and author (`imksc`).
   - `hooks/hooks.json`: lists the hook modules (`"modules": ["./<name>.mjs"]`).
@@ -44,3 +45,10 @@ Some mods started as copies from other repos (`replay-theater` came from `anthro
 
 - Change its README's install and run steps to use this repo (`im-ksc/ks-claude-code-mods`, marketplace `ks-claude-code-mods`, path `mod/<name>`), not the upstream one.
 - Keep the original copyright and SPDX license headers in the source files. Don't remove or rewrite them.
+
+## Skills
+
+The repo is the source of truth for the owner's skills. Edit them in `.agents/skills/`, never in `~/.agents/skills`, which `npx skills update -g` overwrites from `main`.
+
+- Most skills are forks of upstream repos and many have local edits. Don't run `npx skills add` or `npx skills update` inside this repo: that would pull upstream over the edits. Merge upstream changes by hand.
+- When you add or remove a skill, update the table in `.agents/skills/README.md`, including its source and license. Keep any upstream `LICENSE` file in the skill's folder.
