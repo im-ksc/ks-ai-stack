@@ -36,7 +36,7 @@ In the desktop app, the bars are drawn as solid rounded bars that fill their col
 | Control | What it does |
 | --- | --- |
 | `Compact` (`c`) | Runs `/compact`. Pressed during a turn, it runs once the turn ends. A failure shows the reason Claude Code gives. |
-| `▾` / `▸` (`h`) | Collapses the band to one line, or expands it. The choice is kept across sessions. The desktop app draws a larger triangle without button shading, with the click area centred on it. |
+| `▾` / `▸` (`h`) | Collapses the band to one line, or expands it. The choice is kept across sessions. The desktop app draws `▼` / `▲` without button shading. |
 | `/hud` | Hides or shows the whole band. The choice is kept across sessions. |
 
 The hotkeys work in a terminal while the band has the focus: click it, or press ctrl+x tab. The desktop app shows plain buttons without them.
@@ -81,6 +81,7 @@ The recording shows version 0.2, before the redesign. Claude works through a fou
   - 0.3.3: Compact failed in the desktop app, which can't compact from a mod directly, so the button now runs `/compact` and waits for a running turn. The verdicts are shorter, the collapsed line has dividers, each limit's bar stays with its reset line, and the desktop's collapse click area covers the whole triangle.
   - 0.3.4: the collapse click area still sat left of the triangle, because spaces in the desktop's font are narrower than cells. It's now centred on the triangle. The collapsed line, modelled on a screenshot of another usage line, spreads across the band with full labels, each limit's reset time and, in the desktop app, SVG rings. The todo count was dropped from it.
   - 0.3.5: a limit under 10% into its window now says `Too early to project` rather than leaving out its projection. The ellipsis beside the desktop collapse triangle, drawn where the button cut its blank label short, is now transparent.
+  - 0.3.6: the desktop's collapse is now a plain `▼` / `▲` button, not a blank button over a drawn triangle. That drops the `..` the blank label was cut to, and the click lands on the glyph.
 
 ## Run it
 

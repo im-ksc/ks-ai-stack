@@ -183,24 +183,18 @@ test("the terminal's buttons have hotkeys; the desktop's are plain", async ($, o
   }
 });
 
-test("the desktop's collapse is a chromeless button over a drawn triangle", async ($, on) => {
+test("the desktop's collapse is a plain ▼ / ▲ button", async ($, on) => {
   const stored = store(on);
   on("ui.render", () => ENGINE as never);
   on("session.measure", (_$, e) => ({ changed: e.changed }));
   await $.session.measure({ context: { tokens: 48000, window: 200000, percent: 24 }, rateLimits: [], cost: { usd: 1 }, changed: ["context", "cost"] });
   const ui = await band($, "desktop");
-  expect((await ui.find({ key: "collapse" }))?.props.plain).toBe(true);
-  expect((await ui.findAll({})).some((n) => n.props.alt === "Collapse")).toBe(true);
+  expect((await ui.find({ key: "collapse" }))?.props).toMatchObject({ label: "▼", plain: true });
   await ui.press({ key: "collapse" });
   expect(stored.get("isCollapsed")).toBe(true);
-  expect((await ui.findAll({})).some((n) => n.props.alt === "Expand")).toBe(true);
+  expect((await ui.find({ key: "collapse" }))?.props.label).toBe("▲");
   // Collapsed, each bar is a ring.
   expect((await ui.findAll({})).filter((n) => /used$/.test(n.props.alt ?? "")).map((n) => n.props.source)).toEqual([expect.stringMatching(/stroke-dasharray="\d+ 100"/)]);
-  // The press is centred on the triangle, as wide as its box.
-  expect((await ui.find({ key: "press" }))?.props).toMatchObject({ width: 4, justifyContent: "center" });
-  // Its blank label is transparent, so the ellipsis the button cuts it to doesn't show.
-  expect((await ui.find({ key: "collapse" }))?.children).toMatchObject([{ props: { color: "#00000000" } }]);
-  await ui.unmount();
 });
 
 test("a narrow terminal stacks the bars and drops the detail rows", async ($, on) => {
