@@ -24,7 +24,7 @@ Collapsed, it's one line spread across the band, and each bar becomes a ring (a 
 | `⎇ feat/hud*` | `git branch --show-current`, and `*` when `git status --porcelain` lists changes. Read at session start and after every Bash call. Hidden outside a git repository and on a detached HEAD. |
 | Verdict | Whether the 5-hour and weekly limits last until they reset, at the rate they've been used so far. Green: `Cruising. Plenty left for Wednesday.` Yellow, or red from 90% used: `Easy, tiger. 5-hour runs dry 14:50, 30m early.` Red: `Weekly's tapped out. Back Wednesday 09:00.` Cut short with `…` when the line is too narrow. |
 | `$0.42 · 1.2M in · 38k out` | The cost `/cost` reports. On a Pro or Max subscription this is what the same tokens would cost at API prices, not a charge. Input counts uncached, cache-write and cache-read tokens. Subagents' tokens are included. |
-| `5 Hour ━━━┃━── 81%` | How much of the 5-hour window is used. The `┃` marks how much of the window has passed, so a bar that fills past it is ahead of pace. The line under it projects the use at the reset and counts down to it. The tick and projection appear once 10% of the window has passed. |
+| `5 Hour ━━━┃━── 81%` | How much of the 5-hour window is used. The `┃` marks how much of the window has passed, so a bar that fills past it is ahead of pace. The line under it projects the use at the reset and counts down to it. The tick and projection appear once 10% of the window has passed. Until then the line says `Too early to project`. |
 | `Weekly ━━━┃━── 20%` | The same for the weekly window. |
 | `████▓▒░░ Context 24% to compact` | Context used, measured against the point where auto-compact runs. The bar is split into messages, tools and everything else, in the colours `/context` uses, with each part's tokens listed below it. With auto-compact off, it's measured against the model's context window and reads `used`. |
 | `↻ 14:00` | Collapsed only: when each limit resets. The time alone for today, the day too for later. |
@@ -80,6 +80,7 @@ The recording shows version 0.2, before the redesign. Claude works through a fou
   - 0.3.2: the two columns sat right under the headline, the usage column was shorter than the context column, and the collapse button was shaded. The body now has a gap above it, the usage rows spread to the context column's height, and the desktop's collapse control is a bigger triangle with no shading.
   - 0.3.3: Compact failed in the desktop app, which can't compact from a mod directly, so the button now runs `/compact` and waits for a running turn. The verdicts are shorter, the collapsed line has dividers, each limit's bar stays with its reset line, and the desktop's collapse click area covers the whole triangle.
   - 0.3.4: the collapse click area still sat left of the triangle, because spaces in the desktop's font are narrower than cells. It's now centred on the triangle. The collapsed line, modelled on a screenshot of another usage line, spreads across the band with full labels, each limit's reset time and, in the desktop app, SVG rings. The todo count was dropped from it.
+  - 0.3.5: a limit under 10% into its window now says `Too early to project` rather than leaving out its projection. The ellipsis beside the desktop collapse triangle, drawn where the button cut its blank label short, is now transparent.
 
 ## Run it
 

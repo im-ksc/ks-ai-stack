@@ -261,8 +261,9 @@ export function register(on) {
         children: Svg({ alt: collapsed ? "Expand" : "Collapse", width: 12, height: 8,
           source: `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="8"><path d="${collapsed ? "M1 7 6 1 11 7z" : "M1 1h10L6 7z"}" fill="#a0a0a0"/></svg>` }) }),
       // Centred like the triangle and wider than it: spaces in the desktop's font are narrow.
+      // Transparent, as the button cuts the wide label to an ellipsis.
       Box({ key: "press", position: "absolute", top: 0, left: 0, width: 4, height: 1, alignItems: "center", justifyContent: "center",
-        children: Button({ key: "collapse", label: "\u2003\u2003", plain: true, hover: { backgroundColor: "#00000000" }, onPress: toggle }) }),
+        children: Button({ key: "collapse", label: "\u2003\u2003", children: Text({ color: "#00000000", children: "\u2003\u2003" }), plain: true, hover: { backgroundColor: "#00000000" }, onPress: toggle }) }),
     ] });
     const buttons = [
       Button({ key: "compact", label: "Compact", ...(!isDesktop && { hotkey: "c" }), variant: "secondary", onPress: compact }),
@@ -329,7 +330,7 @@ export function register(on) {
         const resets = l.resetsAt ? `resets in ${span(Date.parse(l.resetsAt) - now)}` : null;
         const percent = Text({ color: level(used), children: `${String(Math.round(used)).padStart(3)}%` });
         if (!isWide) return [line(l.kind, [`${label} `, ...bar, " ", percent, resets ? dim(` · ${span(Date.parse(l.resetsAt) - now)}`) : ""])];
-        const projected = f === null ? null : `On pace for ~${Math.round(used / f)}%`;
+        const projected = f === null ? (l.resetsAt ? "Too early to project" : null) : `On pace for ~${Math.round(used / f)}%`;
         const head = isDesktop
           ? Box({ key: l.kind, flexDirection: "row", children: [
             Box({ key: "label", width: 7, flexShrink: 0, children: Text({ children: label }) }),
