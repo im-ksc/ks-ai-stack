@@ -3,7 +3,7 @@
 A Claude Code mod that draws a band of up to six lines above the prompt. The first line holds the git branch, a one-sentence verdict on the usage limits, the session's cost and tokens, and two buttons. Under it, the 5-hour and weekly limits sit on the left and the context on the right.
 
 ```text
-⎇ feat/hud* │ On track. You should reach Wednesday's reset with room to spare. │ $0.42 · 1.2M in · 38k out  [ Compact ] [ ▾ ]
+⎇ feat/hud* │ Cruising. Plenty left for Wednesday. │ $0.42 · 1.2M in · 38k out  [ Compact ] [ ▾ ]
 5 Hour ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┃━━━━━━───  81%   ████████████▓▓▓▒▒░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
   On pace for ~87% · resets in 23m                         Context 24% to compact                   120k left of 160k
 Weekly ━━━━━━━━┃━━━━──────────────────────────────────  20%   Messages                                                190k
@@ -14,7 +14,7 @@ Weekly ━━━━━━━━┃━━━━───────────�
 Collapsed, it's one line, and each bar becomes a circle:
 
 ```text
-⎇ feat/hud*  ◕ 3/5  5h ◕ 81%  wk ◔ 20%  ctx ◔ 30%  $0.42                                                 [ Compact ] [ ▸ ]
+⎇ feat/hud* │ ◕ 3/5 │ 5h ◕ 81% │ wk ◔ 20% │ ctx ◔ 30% │ $0.42                                           [ Compact ] [ ▸ ]
 ```
 
 ## What this shows
@@ -22,7 +22,7 @@ Collapsed, it's one line, and each bar becomes a circle:
 | Part | What it reads |
 | --- | --- |
 | `⎇ feat/hud*` | `git branch --show-current`, and `*` when `git status --porcelain` lists changes. Read at session start and after every Bash call. Hidden outside a git repository and on a detached HEAD. |
-| Verdict | Whether the 5-hour and weekly limits last until they reset, at the rate they've been used so far. Green: `On track.` Yellow, or red from 90% used: `At this pace the 5-hour limit runs out around 14:50, 30m before it resets.` Red: `Weekly limit reached. Resets Wednesday 09:00.` Cut short with `…` when the line is too narrow. |
+| Verdict | Whether the 5-hour and weekly limits last until they reset, at the rate they've been used so far. Green: `Cruising. Plenty left for Wednesday.` Yellow, or red from 90% used: `Easy, tiger. 5-hour runs dry 14:50, 30m early.` Red: `Weekly's tapped out. Back Wednesday 09:00.` Cut short with `…` when the line is too narrow. |
 | `$0.42 · 1.2M in · 38k out` | The cost `/cost` reports. On a Pro or Max subscription this is what the same tokens would cost at API prices, not a charge. Input counts uncached, cache-write and cache-read tokens. Subagents' tokens are included. |
 | `5 Hour ━━━┃━── 81%` | How much of the 5-hour window is used. The `┃` marks how much of the window has passed, so a bar that fills past it is ahead of pace. The line under it projects the use at the reset and counts down to it. The tick and projection appear once 10% of the window has passed. |
 | `Weekly ━━━┃━── 20%` | The same for the weekly window. |
@@ -35,7 +35,7 @@ In the desktop app, the bars are drawn as solid rounded bars that fill their col
 
 | Control | What it does |
 | --- | --- |
-| `Compact` (`c`) | Compacts the conversation, as `/compact` does. During a turn it says to try again when the turn ends. Any other failure shows the reason Claude Code gives. |
+| `Compact` (`c`) | Runs `/compact`. Pressed during a turn, it runs once the turn ends. A failure shows the reason Claude Code gives. |
 | `▾` / `▸` (`h`) | Collapses the band to one line, or expands it. The choice is kept across sessions. The desktop app draws a larger triangle without button shading. |
 | `/hud` | Hides or shows the whole band. The choice is kept across sessions. |
 
@@ -78,6 +78,7 @@ The recording shows version 0.2, before the redesign. Claude works through a fou
   - 0.3.0: a redesign settled in an interview, with a screenshot of another usage panel as the reference. The limits gained a pace tick, a projection and a verdict. The context bar is split by category. Compact and collapse buttons were added, and the todo bar moved to the collapsed line.
   - 0.3.1, after use in the desktop app: the band stacked at a normal window width, the buttons showed hotkey chips, and every Compact failure read as "between turns". The desktop now draws SVG bars in two columns with plain buttons, terminals split from 80 columns, and Compact shows the real reason it failed when no turn is running.
   - 0.3.2: the two columns sat right under the headline, the usage column was shorter than the context column, and the collapse button was shaded. The body now has a gap above it, the usage rows spread to the context column's height, and the desktop's collapse control is a bigger triangle with no shading.
+  - 0.3.3: Compact failed in the desktop app, which can't compact from a mod directly, so the button now runs `/compact` and waits for a running turn. The verdicts are shorter, the collapsed line has dividers, each limit's bar stays with its reset line, and the desktop's collapse click area covers the whole triangle.
 
 ## Run it
 

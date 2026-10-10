@@ -91,8 +91,8 @@ function verdict(limits, now) {
   const reached = limits.find((l) => l.percentUsed >= 100);
   if (reached) {
     const name = WINDOWS[reached.kind].name;
-    const reset = reached.resetsAt ? ` Resets ${when(reached.resetsAt, now)}.` : "";
-    return { color: "error", text: `${name[0].toUpperCase()}${name.slice(1)} limit reached.${reset}` };
+    const reset = reached.resetsAt ? ` Back ${when(reached.resetsAt, now)}.` : "";
+    return { color: "error", text: `${name[0].toUpperCase()}${name.slice(1)}'s tapped out.${reset}` };
   }
   const runsOut = limits.flatMap((l) => {
     const f = pace(l, now);
@@ -106,11 +106,11 @@ function verdict(limits, now) {
     const { l, out, reset } = runsOut;
     return {
       color: level(Math.max(70, l.percentUsed)),
-      text: `At this pace the ${WINDOWS[l.kind].name} limit runs out around ${when(out, now)}, ${span(reset - out)} before it resets.`,
+      text: `Easy, tiger. ${WINDOWS[l.kind].name[0].toUpperCase()}${WINDOWS[l.kind].name.slice(1)} runs dry ${when(out, now)}, ${span(reset - out)} early.`,
     };
   }
   const weekly = limits.find((l) => l.kind === "seven_day" && l.resetsAt);
-  return { color: "success", text: weekly ? `On track. You should reach ${DAYS[new Date(weekly.resetsAt).getDay()]}'s reset with room to spare.` : "On track." };
+  return { color: "success", text: weekly ? `Cruising. Plenty left for ${DAYS[new Date(weekly.resetsAt).getDay()]}.` : "Cruising." };
 }
 
 // The context breakdown in three groups, each in the colour /context gives its largest row.
@@ -143,6 +143,7 @@ function runs(Text, list) {
 }
 
 let ticker; // the minute timer
+let isCompacting = false; // so a second press doesn't queue a second /compact
 
 export function register(on) {
   on("session.start", async ($, e, next) => {
@@ -248,26 +249,35 @@ export function register(on) {
     const sep = dim(" │ ");
     const line = (key, children) => Box({ key, children: Text({ children }) }); // a Text takes no key
 
+    // /compact rather than $.session.compact(), which an SDK session (the desktop app) lacks;
+    // the command waits for a running turn. Started on a timer: it outlasts a press.
+    const compact = () => {
+      if (isCompacting) return;
+      isCompacting = true;
+      $.clock.after(0, async () => {
+        try {
+          await $.command.run({ command: "compact" });
+        } catch (err) {
+          $.ui.toast(`Compact failed: ${err?.message ?? err}`);
+        } finally {
+          isCompacting = false;
+        }
+      });
+    };
     const toggle = async () => {
       await update($, isCollapsed, () => !collapsed);
       await $.store.set("isCollapsed", !collapsed);
     };
     // The desktop shades every button but a plain one, so a bigger triangle is drawn and a
     // chromeless button laid over it takes the click.
-    const triangle = () => Box({ key: "collapse-box", width: 3, height: 1, children: [
-      Box({ key: "glyph", position: "absolute", top: 0, left: 0, width: 3, height: 1, alignItems: "center", justifyContent: "center",
+    const triangle = () => Box({ key: "collapse-box", width: 4, height: 1, children: [
+      Box({ key: "glyph", position: "absolute", top: 0, left: 0, width: 4, height: 1, alignItems: "center", justifyContent: "center",
         children: Svg({ alt: collapsed ? "Expand" : "Collapse", width: 12, height: 8,
           source: `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="8"><path d="${collapsed ? "M1 7 6 1 11 7z" : "M1 1h10L6 7z"}" fill="#a0a0a0"/></svg>` }) }),
-      Box({ key: "press", position: "absolute", top: 0, left: 0, children: Button({ key: "collapse", label: "   ", plain: true, onPress: toggle }) }),
+      Box({ key: "press", position: "absolute", top: 0, left: 0, children: Button({ key: "collapse", label: "    ", plain: true, onPress: toggle }) }),
     ] });
     const buttons = [
-      Button({ key: "compact", label: "Compact", ...(!isDesktop && { hotkey: "c" }), variant: "secondary", onPress: async () => {
-        try {
-          await $.session.compact();
-        } catch (err) {
-          $.ui.toast(e.props.isWorking ? "Compact runs between turns. Try again when this one ends." : `Compact failed: ${err?.message ?? err}`);
-        }
-      } }),
+      Button({ key: "compact", label: "Compact", ...(!isDesktop && { hotkey: "c" }), variant: "secondary", onPress: compact }),
       isDesktop ? triangle() : Button({ key: "collapse", label: collapsed ? "▸" : "▾", hotkey: "h", onPress: toggle }),
     ];
     // Parts kept whole; the one marked `shrinks` is cut with … when the row is too narrow.
@@ -297,7 +307,7 @@ export function register(on) {
         costUsd !== undefined && `$${costUsd.toFixed(2)}`,
       ].filter(Boolean);
       // Nothing to show still draws the buttons, so a collapsed band can be expanded.
-      lines = [row("head", join(parts.map((children) => ({ children })), "  "))];
+      lines = [row("head", join(parts.map((children) => ({ children })), sep))];
     } else {
       const v = limits.length ? verdict(limits.map(([, , l]) => l), now) : null;
       const parts = [
@@ -329,10 +339,11 @@ export function register(on) {
             Text({ children: " " }), percent,
           ] })
           : line(l.kind, [`${label} `, ...bar, " ", percent]);
-        return [
+        // The bar and its pace line kept together, so the column spreads the pairs, not the rows.
+        return [Box({ key: `${l.kind}-group`, flexDirection: "column", children: [
           head,
           line(`${l.kind}-pace`, dim(`  ${[projected, resets].filter(Boolean).join(" · ")}`)),
-        ];
+        ] })];
       });
 
       // The context: one bar split by group against the auto-compact point (or the window).
