@@ -28,7 +28,7 @@ More in the [replay-theater README](mod/replay-theater/README.md).
 
 ### hud
 
-A three-line band above the prompt. It shows the git branch and todo progress, context used, the session's cost and tokens, and the 5-hour and weekly usage limits. Run `/hud` to hide or show it.
+A band above the prompt of up to six lines. It shows the 5-hour and weekly usage limits with a verdict on whether they'll last, the context used, the git branch, and the session's cost and tokens. Buttons compact the conversation or collapse the band to one line. Run `/hud` to hide or show it.
 
 ![HUD band filling its todo bar as Claude creates four files](mod/hud/demo/hud.gif)
 
