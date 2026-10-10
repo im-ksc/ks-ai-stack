@@ -1,5 +1,6 @@
-// HUD: a three-line band above the prompt: the work (branch, todo progress),
-// context and cost, and the 5h and weekly usage limits.
+// HUD: a band above the prompt. Expanded: the branch, a verdict on the usage
+// limits and the cost, then the 5h and weekly limits beside the context.
+// Collapsed: one line, with each bar drawn as a circle.
 
 import { atom, read, update } from "claude-code";
 
@@ -9,6 +10,8 @@ const branch = atom({ plugin: "hud", key: "branch" }, null);
 const budget = atom({ plugin: "hud", key: "budget" }, {});
 const tokens = atom({ plugin: "hud", key: "tokens" }, { input: 0, output: 0 });
 const isHidden = atom({ plugin: "hud", key: "isHidden" }, false);
+const isCollapsed = atom({ plugin: "hud", key: "isCollapsed" }, false);
+const minute = atom({ plugin: "hud", key: "minute" }, 0); // bumped so countdowns redraw
 
 async function refreshBranch($) {
   try {
@@ -27,6 +30,9 @@ const cells = (percent, width) => Math.max(0, Math.min(width, Math.round((percen
 // Theme colour for how much of a budget is used.
 const level = (used) => (used >= 90 ? "error" : used >= 70 ? "warning" : "success");
 
+// A bar in one glyph, for the collapsed line: ○ ◔ ◑ ◕ ●.
+const circle = (percent) => "○◔◑◕●"[Math.max(0, Math.min(4, Math.round(percent / 25)))];
+
 // 1.2M, 38k, 950.
 function count(n) {
   if (n >= 999_500) return `${(n / 1e6).toFixed(1)}M`; // not "1000k"
@@ -34,17 +40,90 @@ function count(n) {
   return String(n);
 }
 
-const clock = (iso) => {
-  const d = new Date(iso);
+const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const clock = (time) => {
+  const d = new Date(time);
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 };
+// "14:50" today, "Wednesday 09:00" on another day.
+const when = (time, now) =>
+  new Date(time).toDateString() === new Date(now).toDateString() ? clock(time) : `${DAYS[new Date(time).getDay()]} ${clock(time)}`;
+
+// Two units at most: "2d 20h", "3h 5m", "23m".
+function span(ms) {
+  const m = Math.max(0, Math.round(ms / 60e3));
+  if (m >= 1440) return `${Math.floor(m / 1440)}d ${Math.floor((m % 1440) / 60)}h`;
+  if (m >= 60) return `${Math.floor(m / 60)}h ${m % 60}m`;
+  return `${m}m`;
+}
+
+const WINDOWS = { five_hour: { ms: 5 * 3600e3, name: "5-hour" }, seven_day: { ms: 7 * 86400e3, name: "weekly" } };
+
+// How far through its window a limit is, 0 to 1, or null when that isn't
+// known yet: no reset time, or under 10% in, too early to project from.
+function pace(limit, now) {
+  if (!limit.resetsAt) return null;
+  const f = 1 - (Date.parse(limit.resetsAt) - now) / WINDOWS[limit.kind].ms;
+  return f >= 0.1 ? Math.min(1, f) : null;
+}
+
+// One sentence on the limits: reached, running out before the reset, or on track.
+function verdict(limits, now) {
+  const reached = limits.find((l) => l.percentUsed >= 100);
+  if (reached) {
+    const name = WINDOWS[reached.kind].name;
+    const reset = reached.resetsAt ? ` Resets ${when(reached.resetsAt, now)}.` : "";
+    return { color: "error", text: `${name[0].toUpperCase()}${name.slice(1)} limit reached.${reset}` };
+  }
+  const runsOut = limits.flatMap((l) => {
+    const f = pace(l, now);
+    if (f === null || l.percentUsed <= 0) return [];
+    const reset = Date.parse(l.resetsAt);
+    const start = reset - WINDOWS[l.kind].ms;
+    const out = start + ((now - start) * 100) / l.percentUsed;
+    return out < reset ? [{ l, out, reset }] : [];
+  }).sort((a, b) => a.out - b.out)[0];
+  if (runsOut) {
+    const { l, out, reset } = runsOut;
+    return {
+      color: level(Math.max(70, l.percentUsed)),
+      text: `At this pace the ${WINDOWS[l.kind].name} limit runs out around ${when(out, now)}, ${span(reset - out)} before it resets.`,
+    };
+  }
+  const weekly = limits.find((l) => l.kind === "seven_day" && l.resetsAt);
+  return { color: "success", text: weekly ? `On track. You should reach ${DAYS[new Date(weekly.resetsAt).getDay()]}'s reset with room to spare.` : "On track." };
+}
+
+// The context breakdown in three groups, each in the colour /context gives its largest row.
+function groups(categories) {
+  const named = { Messages: [], Tools: [], Other: [] };
+  for (const c of categories.filter((c) => c.kind === "used")) {
+    named[c.name === "Messages" ? "Messages" : /tool/i.test(c.name) ? "Tools" : "Other"].push(c);
+  }
+  return Object.entries(named).map(([name, rows]) => ({
+    name,
+    tokens: rows.reduce((sum, c) => sum + c.tokens, 0),
+    color: rows.sort((a, b) => b.tokens - a.tokens)[0]?.color ?? "inactive",
+  }));
+}
 
 function todoProgress(items) {
   if (!items.length) return null;
-  const done = items.filter((t) => t.status === "completed").length;
-  const current = items.find((t) => t.status === "in_progress");
-  return { done, total: items.length, label: current && (current.activeForm || current.content) };
+  return { done: items.filter((t) => t.status === "completed").length, total: items.length };
 }
+
+// [glyph, colour] cells merged into one Text per run of a colour; no colour draws dim.
+function runs(Text, list) {
+  const out = [];
+  for (const [glyph, color] of list) {
+    const last = out.at(-1);
+    if (last && last.color === color) last.text += glyph;
+    else out.push({ text: glyph, color });
+  }
+  return out.map(({ text, color }) => Text(color ? { color, children: text } : { dimColor: true, children: text }));
+}
+
+let ticker; // the minute timer
 
 export function register(on) {
   on("session.start", async ($, e, next) => {
@@ -52,7 +131,11 @@ export function register(on) {
     await $.command.register({ name: "hud", description: "Hide or show the HUD band above the prompt" });
     const hidden = (await $.store.get("isHidden")) === true;
     await update($, isHidden, () => hidden);
+    const collapsed = (await $.store.get("isCollapsed")) === true;
+    await update($, isCollapsed, () => collapsed);
     await refreshBranch($);
+    ticker?.cancel(); // session.start fires again on /clear and resume
+    ticker = $.clock.every(60e3, () => update($, minute, (n) => n + 1));
     return r;
   });
 
@@ -105,21 +188,25 @@ export function register(on) {
   });
 
   on("session.measure", async ($, e, next) => {
-    let contextPercent = e.context.percent;
+    let contextPercent = e.context.percent === undefined ? undefined : Math.round(e.context.percent);
     let contextLimit = e.context.window;
+    let isToCompact = false;
+    let contextGroups;
     if (e.context.tokens !== undefined) {
       try {
         // The local estimate: no API request. Absent threshold means auto-compact is off.
-        const threshold = (await $.session.usage({ breakdown: "summary" })).context.breakdown?.autoCompactThreshold;
-        if (threshold) {
-          contextLimit = threshold;
-          contextPercent = Math.round((e.context.tokens / threshold) * 100);
+        const breakdown = (await $.session.usage({ breakdown: "summary" })).context.breakdown;
+        if (breakdown?.categories) contextGroups = groups(breakdown.categories);
+        if (breakdown?.autoCompactThreshold) {
+          contextLimit = breakdown.autoCompactThreshold;
+          contextPercent = Math.round((e.context.tokens / contextLimit) * 100);
+          isToCompact = true;
         }
       } catch { /* keep the window's percent */ }
     }
     const limit = (kind) => e.rateLimits.find((l) => l.kind === kind);
     await update($, budget, () => ({
-      contextPercent, contextTokens: e.context.tokens, contextLimit,
+      contextPercent, contextTokens: e.context.tokens, contextLimit, isToCompact, contextGroups,
       costUsd: e.cost?.usd, fiveHour: limit("five_hour"), weekly: limit("seven_day"),
     }));
     return next(e);
@@ -127,50 +214,129 @@ export function register(on) {
 
   on("ui.render", { component: "AbovePrompt" }, async ($, e, next) => {
     if (e.props.hasSurvey || (await read($, isHidden))) return next(e);
-    const { Box, Text } = $.ui.resolve(e);
+    const { Box, Text, Button } = $.ui.resolve(e);
     const dim = (children) => Text({ dimColor: true, children });
-    // A 10-cell bar: the used part in the level colour, the rest dim.
-    const gauge = (used) => {
-      const n = cells(used, 10);
-      return [Text({ color: level(used), children: "━".repeat(n) }), dim("─".repeat(10 - n))];
-    };
+    await read($, minute); // redraw each minute
+    const now = Date.now();
 
     const b = await read($, branch);
-    const todo = todoProgress([...(await read($, todos)), ...Object.values(await read($, tasks))]);
-    const work = []; // each part is a Text's children
-    if (b) work.push([`⎇ ${b.name}${b.isDirty ? "*" : ""}`]);
-    if (todo) {
-      const n = cells((todo.done / todo.total) * 100, 5);
-      work.push(["▰".repeat(n), dim("▱".repeat(5 - n)), ` ${todo.done}/${todo.total}`, todo.label ? `  ${todo.label}` : ""]);
-    }
-
-    const { contextPercent, contextTokens, contextLimit, costUsd, fiveHour, weekly } = await read($, budget);
+    const collapsed = await read($, isCollapsed);
+    const { contextPercent, contextTokens, contextLimit, isToCompact, contextGroups, costUsd, fiveHour, weekly } = await read($, budget);
     const t = await read($, tokens);
-    const spend = [];
-    if (contextPercent !== undefined) {
-      const fraction = contextTokens !== undefined && contextLimit ? `  ${count(contextTokens)}/${count(contextLimit)}` : "";
-      spend.push([dim("ctx "), ...gauge(contextPercent), ` ${contextPercent}%${fraction}`]);
-    }
-    if (costUsd !== undefined) spend.push([`$${costUsd.toFixed(2)}  ${count(t.input)}`, dim(" in · "), count(t.output), dim(" out")]);
-    const limits = [];
-    if (fiveHour) {
-      const reset = fiveHour.resetsAt ? [dim("  reset "), clock(fiveHour.resetsAt)] : [];
-      limits.push([dim("5h  "), ...gauge(fiveHour.percentUsed), ` ${Math.round(fiveHour.percentUsed)}%`, ...reset]);
-    }
-    if (weekly) limits.push([dim("wk "), ...gauge(weekly.percentUsed), ` ${Math.round(weekly.percentUsed)}%`]);
+    const limits = [["5 Hour", "5h", fiveHour], ["Weekly", "wk", weekly]].filter(([, , l]) => l);
+    const hasContext = contextPercent !== undefined;
+    const sep = dim(" │ ");
+    const line = (key, children) => Box({ key, children: Text({ children }) }); // a Text takes no key
 
-    const lines = [["work", work], ["spend", spend], ["limits", limits]].filter(([, parts]) => parts.length);
-    const beneath = await next(e); // another mod's band, kept under this one
-    if (!lines.length) return beneath;
-    return Box({
-      flexDirection: "column",
+    const buttons = [
+      Button({ key: "compact", label: "Compact", hotkey: "c", variant: "secondary", onPress: async () => {
+        try { await $.session.compact(); } catch { $.ui.toast("Compact runs between turns. Try again when this one ends."); }
+      } }),
+      Button({ key: "collapse", label: collapsed ? "▸" : "▾", hotkey: "h", onPress: async () => {
+        await update($, isCollapsed, () => !collapsed);
+        await $.store.set("isCollapsed", !collapsed);
+      } }),
+    ];
+    // Parts kept whole; the one marked `shrinks` is cut with … when the row is too narrow.
+    const row = (key, parts) => Box({
+      key, flexDirection: "row",
       children: [
-        ...lines.map(([key, parts]) => Box({
-          key, flexDirection: "row", gap: 3,
-          children: parts.map((children) => Text({ children })),
+        ...parts.map(({ shrinks, children }, i) => Box({
+          key: `part${i}`, flexShrink: shrinks ? 1 : 0, children: Text({ wrap: "truncate-end", children }),
         })),
-        beneath,
-      ].filter(Boolean),
+        Box({ key: "gap", flexGrow: 1, minWidth: 2 }),
+        ...buttons.flatMap((button, i) => (i ? [Text({ children: " " }), button] : [button])),
+      ],
     });
+    const join = (parts, between) => parts.flatMap((p, i) => (i ? [{ children: between }, p] : [p]));
+    const cost = costUsd === undefined ? null : [`$${costUsd.toFixed(2)} · ${count(t.input)}`, dim(" in · "), count(t.output), dim(" out")];
+
+    let lines;
+    if (collapsed) {
+      const todo = todoProgress([...(await read($, todos)), ...Object.values(await read($, tasks))]);
+      const percentChip = (label, percent, text = `${Math.round(percent)}%`) =>
+        [dim(`${label} `), Text({ color: level(percent), children: circle(percent) }), ` ${text}`];
+      const parts = [
+        b && `⎇ ${b.name}${b.isDirty ? "*" : ""}`,
+        todo && [circle((todo.done / todo.total) * 100), ` ${todo.done}/${todo.total}`],
+        ...limits.map(([, short, l]) => percentChip(short, l.percentUsed)),
+        hasContext && percentChip("ctx", contextPercent),
+        costUsd !== undefined && `$${costUsd.toFixed(2)}`,
+      ].filter(Boolean);
+      // Nothing to show still draws the buttons, so a collapsed band can be expanded.
+      lines = [row("head", join(parts.map((children) => ({ children })), "  "))];
+    } else {
+      const v = limits.length ? verdict(limits.map(([, , l]) => l), now) : null;
+      const parts = [
+        b && { children: `⎇ ${b.name}${b.isDirty ? "*" : ""}` },
+        v && { shrinks: true, children: Text({ color: v.color, children: v.text }) },
+        cost && { children: cost },
+      ].filter(Boolean);
+      if (!parts.length && !hasContext) return next(e);
+      const isWide = (e.props.bodyColumns ?? 120) >= 100;
+      const half = Math.floor(((e.props.bodyColumns ?? 120) - 3) / 2);
+      const barWidth = isWide ? half - 14 : 16;
+
+      // Each limit: its bar with a ┃ at how far through the window it is, and the pace below.
+      const limitRows = limits.flatMap(([label, , l]) => {
+        const used = l.percentUsed;
+        const f = pace(l, now);
+        const n = cells(used, barWidth);
+        const tick = f === null ? -1 : Math.min(barWidth - 1, Math.floor(f * barWidth));
+        const bar = runs(Text, Array.from({ length: barWidth }, (_, i) => (i === tick ? ["┃", "text"] : i < n ? ["━", level(used)] : ["─", null])));
+        const resets = l.resetsAt ? `resets in ${span(Date.parse(l.resetsAt) - now)}` : null;
+        const percent = Text({ color: level(used), children: `${String(Math.round(used)).padStart(3)}%` });
+        if (!isWide) return [line(l.kind, [`${label} `, ...bar, " ", percent, resets ? dim(` · ${span(Date.parse(l.resetsAt) - now)}`) : ""])];
+        const projected = f === null ? null : `On pace for ~${Math.round(used / f)}%`;
+        return [
+          line(l.kind, [`${label} `, ...bar, " ", percent]),
+          line(`${l.kind}-pace`, dim(`  ${[projected, resets].filter(Boolean).join(" · ")}`)),
+        ];
+      });
+
+      // The context: one bar split by group against the auto-compact point (or the window).
+      const contextRows = [];
+      if (hasContext) {
+        const width = isWide ? half : barWidth;
+        const filled = cells(contextPercent, width);
+        const total = contextGroups?.reduce((sum, g) => sum + g.tokens, 0);
+        let bar;
+        if (total) {
+          let done = 0, before = 0;
+          bar = contextGroups.flatMap((g) => {
+            done += g.tokens;
+            const upTo = Math.round((done / total) * filled);
+            const these = Array.from({ length: upTo - before }, () => ["█", g.color]);
+            before = upTo;
+            return these;
+          });
+        } else {
+          bar = Array.from({ length: filled }, () => ["█", level(contextPercent)]);
+        }
+        bar = runs(Text, [...bar, ...Array.from({ length: width - filled }, () => ["░", null])]);
+        const percent = Text({ color: level(contextPercent), children: `${contextPercent}% ${isToCompact ? "to compact" : "used"}` });
+        const left = contextTokens !== undefined && contextLimit ? `${count(Math.max(0, contextLimit - contextTokens))} left of ${count(contextLimit)}` : "";
+        const spread = (key, a, z) => Box({ key, flexDirection: "row", justifyContent: "space-between", width, children: [Text({ children: a }), dim(z)] });
+        if (isWide) {
+          contextRows.push(line("context-bar", bar));
+          contextRows.push(spread("context-label", ["Context ", percent], left));
+          for (const g of contextGroups ?? []) contextRows.push(spread(g.name, Text({ color: g.color, children: g.name }), count(g.tokens)));
+        } else {
+          contextRows.push(line("context", ["Context ", ...bar, " ", percent]));
+        }
+      }
+
+      lines = [row("head", join(parts, sep))];
+      if (isWide) {
+        const column = (key, children) => children.length && Box({ key, flexDirection: "column", width: half, children });
+        const columns = [column("limits", limitRows), column("context-column", contextRows)].filter(Boolean);
+        if (columns.length) lines.push(Box({ key: "body", flexDirection: "row", gap: 3, children: columns }));
+      } else {
+        lines.push(...limitRows, ...contextRows);
+      }
+    }
+
+    const beneath = await next(e); // another mod's band, kept under this one
+    return Box({ flexDirection: "column", children: [...lines, beneath].filter(Boolean) });
   });
 }

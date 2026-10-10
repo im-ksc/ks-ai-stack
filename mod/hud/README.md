@@ -1,11 +1,20 @@
 # HUD
 
-A Claude Code mod that draws a three-line band above the prompt. The first line shows the work: the git branch and todo progress. The second shows context used and the session's cost and tokens. The third shows how much of the 5-hour and weekly usage limits is used. Labels and the empty part of each bar are dim, so the numbers stand out.
+A Claude Code mod that draws a band of up to six lines above the prompt. The first line holds the git branch, a one-sentence verdict on the usage limits, the session's cost and tokens, and two buttons. Under it, the 5-hour and weekly limits sit on the left and the context on the right.
 
 ```text
-⎇ feat/hud*   ▰▰▰▱▱ 3/5  Running tests
-ctx ━━━━━━──── 61%  156k/256k   $0.42  1.2M in · 38k out
-5h  ━━──────── 23%  reset 15:40   wk ━━━━━───── 48%
+⎇ feat/hud* │ On track. You should reach Wednesday's reset with room to spare. │ $0.42 · 1.2M in · 38k out  [ Compact ] [ ▾ ]
+5 Hour ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┃━━━━━━───  81%   ████████████▓▓▓▒▒░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+  On pace for ~87% · resets in 23m                         Context 24% to compact                   120k left of 160k
+Weekly ━━━━━━━━┃━━━━──────────────────────────────────  20%   Messages                                                190k
+  On pace for ~36% · resets in 2d 20h                      Tools                                                    36k
+                                                           Other                                                    18k
+```
+
+Collapsed, it's one line, and each bar becomes a circle:
+
+```text
+⎇ feat/hud*  ◕ 3/5  5h ◕ 81%  wk ◔ 20%  ctx ◔ 30%  $0.42                                                 [ Compact ] [ ▸ ]
 ```
 
 ## What this shows
@@ -13,28 +22,38 @@ ctx ━━━━━━──── 61%  156k/256k   $0.42  1.2M in · 38k out
 | Part | What it reads |
 | --- | --- |
 | `⎇ feat/hud*` | `git branch --show-current`, and `*` when `git status --porcelain` lists changes. Read at session start and after every Bash call. Hidden outside a git repository and on a detached HEAD. |
-| `▰▰▰▱▱ 3/5  Running tests` | The todo list Claude keeps with TodoWrite, and the tasks it keeps with TaskCreate and TaskUpdate, counted together. The text is the in-progress item. Subagents' todos aren't counted. Hidden when there are no todos. |
-| `ctx ━━━━━━──── 61%  156k/256k` | Context used, measured against the point where auto-compact runs, as a percentage and in tokens. With auto-compact off, it's measured against the model's context window. |
-| `$0.42  1.2M in · 38k out` | The cost `/cost` reports. On a Pro or Max subscription this is what the same tokens would cost at API prices, not a charge. Input counts uncached, cache-write and cache-read tokens. Subagents' tokens are included. |
-| `5h ━━──────── 23%  reset 15:40` | The 5-hour usage window: how much is used, and when the window resets, in local time. |
-| `wk ━━━━━───── 48%` | The weekly usage window, without the reset time. |
+| Verdict | Whether the 5-hour and weekly limits last until they reset, at the rate they've been used so far. Green: `On track.` Yellow, or red from 90% used: `At this pace the 5-hour limit runs out around 14:50, 30m before it resets.` Red: `Weekly limit reached. Resets Wednesday 09:00.` Cut short with `…` when the line is too narrow. |
+| `$0.42 · 1.2M in · 38k out` | The cost `/cost` reports. On a Pro or Max subscription this is what the same tokens would cost at API prices, not a charge. Input counts uncached, cache-write and cache-read tokens. Subagents' tokens are included. |
+| `5 Hour ━━━┃━── 81%` | How much of the 5-hour window is used. The `┃` marks how much of the window has passed, so a bar that fills past it is ahead of pace. The line under it projects the use at the reset and counts down to it. The tick and projection appear once 10% of the window has passed. |
+| `Weekly ━━━┃━── 20%` | The same for the weekly window. |
+| `████▓▒░░ Context 24% to compact` | Context used, measured against the point where auto-compact runs. The bar is split into messages, tools and everything else, in the colours `/context` uses, with each part's tokens listed below it. With auto-compact off, it's measured against the model's context window and reads `used`. |
+| `◕ 3/5` | Collapsed only: the todo list Claude keeps with TodoWrite, and the tasks it keeps with TaskCreate and TaskUpdate, counted together. Subagents' todos aren't counted. Hidden when there are no todos. |
 
-The filled part of the context, 5-hour and weekly bars is green below 70% used, yellow from 70%, and red from 90%. A line with nothing to show is left out.
+The limit bars and percentages are green below 70% used, yellow from 70%, and red from 90%. The circles on the collapsed line follow the same colours. A part with nothing to show is left out, and countdowns redraw every minute.
 
-`/hud` hides or shows the band. The choice is kept across sessions.
+On a terminal narrower than 100 columns, the context goes under the limits, and the projections and the context breakdown are dropped.
+
+| Control | What it does |
+| --- | --- |
+| `Compact` (`c`) | Compacts the conversation, as `/compact` does. During a turn it says to try again when the turn ends. |
+| `▾` / `▸` (`h`) | Collapses the band to one line, or expands it. The choice is kept across sessions. |
+| `/hud` | Hides or shows the whole band. The choice is kept across sessions. |
+
+The hotkeys work while the band has the focus: click it, or press ctrl+x tab.
 
 The patterns it demonstrates:
 
-- An `AbovePrompt` band drawn from `$.state` values, so it redraws by itself when a value changes.
+- An `AbovePrompt` band drawn from `$.state` values, so it redraws by itself when a value changes, laid out to the band's `bodyColumns`.
+- Buttons in a band, with hotkeys, and a `$.clock.every` timer that redraws the countdowns.
 - Reading the engine's own figures from `session.measure` and `$.session.usage()`, instead of computing cost or context.
 - Watching tool results in `tool.call` after `next(e)`, without changing them.
 - A slash command whose setting is kept in `$.store`.
 
 ## Demo
 
-Claude works through a four-item todo list in a new repo on `feat/demo`. The branch gets a `*` once the first file exists, the todo bar fills with the current item beside it, and the context, cost and token figures fill in when the turn ends. The recording is scripted: run `vhs mod/hud/demo/hud.tape` from the repo root in a plain terminal to make it again.
+The recording shows version 0.2, before the redesign. Claude works through a four-item todo list in a new repo on `feat/demo`. The branch gets a `*` once the first file exists, the todo bar fills with the current item beside it, and the context, cost and token figures fill in when the turn ends. The recording is scripted: run `vhs mod/hud/demo/hud.tape` from the repo root in a plain terminal to make it again.
 
-![HUD band filling its todo bar as Claude creates four files](demo/hud.gif)
+![The HUD band in version 0.2, filling its todo bar as Claude creates four files](demo/hud.gif)
 
 ## How it was built
 
@@ -56,6 +75,7 @@ Claude works through a four-item todo list in a new repo on `feat/demo`. The bra
   - Tested with `claude plugin test` only. It hasn't been tried in a live terminal yet.
   - 0.2.0, after use in a live terminal: the band was hard to scan and wrapped on narrow terminals. It moved to three lines, with dim labels, 10-cell bars, a token fraction for context, and the limits shown as used rather than left.
   - 0.2.1: the replay-theater hint replaced the band after each turn. Both mods now draw the band beneath them under their own rows.
+  - 0.3.0: a redesign settled in an interview, with a screenshot of another usage panel as the reference. The limits gained a pace tick, a projection and a verdict. The context bar is split by category. Compact and collapse buttons were added, and the todo bar moved to the collapsed line.
 
 ## Run it
 
@@ -96,12 +116,15 @@ No environment variables or configuration.
    claude plugin install hud@ks-ai-stack --scope user
    ```
 
-4. Ask Claude for something that makes a todo list. The band fills in as the turn runs.
-5. Type `/hud` to hide the band, and again to show it.
+4. Send Claude a message. The context, cost and limits fill in when the response ends.
+5. Click the band, or press ctrl+x tab, then press `h` to collapse it and `c` to compact.
+6. Type `/hud` to hide the band, and again to show it.
 
 ## Notes / limitations
 
 - The context, cost and usage parts appear after the session's first response. Before that the engine has no reading.
+- The verdict and the projections assume use carries on at the average rate since the window started.
+- The context breakdown groups `/context`'s rows by name: `Messages`, rows with "tool" in the name, and the rest.
 - The context percentage uses the engine's local estimate of the auto-compact point, which sends no API request.
 - Todos and token counts are kept for the session. `/clear` empties them. After `--resume` the token counts start from zero while the cost doesn't, because the cost comes from the engine's ledger.
 - The branch isn't refreshed when you change branches outside Claude Code. It updates after Claude's next Bash call or the next session.
