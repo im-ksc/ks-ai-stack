@@ -32,7 +32,7 @@ Tests import from `claude-code/testing` and run inside the Claude Code binary. T
 
 1. Create `mod/<name>/` with the layout above, and start the version at `0.1.0`.
 2. Add an entry to `.claude-plugin/marketplace.json` with `"source": "./mod/<name>"`, plus the same version and description as `plugin.json`.
-3. In the root `README.md`, add a bullet under **Mods** (and its GIF, if there is one), and add a `claude plugin install <name>@ks-ai-stack` line under **Install**.
+3. In the root `README.md`, add a `### <name>` section under **Mods**, like the existing ones: one or two sentences, its GIF if it has one, its `claude plugin install <name>@ks-ai-stack` line, and a link to its README. If the mod's license differs from the others, update **License**.
 4. Write `mod/<name>/README.md` with the same sections as `mod/replay-theater/README.md`. Tests are optional, but if the mod has them, they must pass.
 
 ## Changing a mod
