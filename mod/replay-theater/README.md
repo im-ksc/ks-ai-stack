@@ -56,30 +56,30 @@ No environment variables or configuration.
 
 **Steps:**
 
-1. Clone this repository and go to this folder's parent:
+1. Clone this repository:
 
    ```bash
-   git clone https://github.com/anthropics/claude-code-playground.git
-   cd claude-code-playground/claude-code/mods
+   git clone https://github.com/im-ksc/ks-claude-code-mods.git
+   cd ks-claude-code-mods
    ```
 
 2. Check the plugin:
 
    ```bash
-   claude plugin validate ./replay-theater
+   claude plugin validate ./mod/replay-theater
    ```
 
 3. Try it for one session:
 
    ```bash
-   claude --plugin-dir ./replay-theater
+   claude --plugin-dir ./mod/replay-theater
    ```
 
-   Or install it, with the other mods here, from the local marketplace in this folder (see the [mods README](../README.md)):
+   Or install it, with the other mods here, from the marketplace at the repository root (see the [root README](../../README.md)):
 
    ```bash
    claude plugin marketplace add ./
-   claude plugin install replay-theater@claude-code-playground-mods --scope user
+   claude plugin install replay-theater@ks-claude-code-mods --scope user
    ```
 
 4. Ask Claude for a change that edits files, for example "rename the function greet to welcome everywhere".
@@ -121,4 +121,4 @@ None.
 
 ---
 
-Shared as-is as part of claude-code-playground. Not an official Anthropic product; no support or maintenance is implied. See the root README and LICENSE.
+Adapted from [anthropics/claude-code-playground](https://github.com/anthropics/claude-code-playground), where it was shared as-is under Apache-2.0 (see the SPDX headers in `hooks/`). Not an official Anthropic product; no support or maintenance is implied.
