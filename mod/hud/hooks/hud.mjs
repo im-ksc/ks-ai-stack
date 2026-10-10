@@ -123,6 +123,8 @@ function runs(Text, list) {
   return out.map(({ text, color }) => Text(color ? { color, children: text } : { dimColor: true, children: text }));
 }
 
+let ticker; // the minute timer
+
 export function register(on) {
   on("session.start", async ($, e, next) => {
     const r = await next(e);
@@ -132,7 +134,8 @@ export function register(on) {
     const collapsed = (await $.store.get("isCollapsed")) === true;
     await update($, isCollapsed, () => collapsed);
     await refreshBranch($);
-    $.clock.every(60e3, () => update($, minute, (n) => n + 1));
+    ticker?.cancel(); // session.start fires again on /clear and resume
+    ticker = $.clock.every(60e3, () => update($, minute, (n) => n + 1));
     return r;
   });
 
@@ -185,7 +188,7 @@ export function register(on) {
   });
 
   on("session.measure", async ($, e, next) => {
-    let contextPercent = e.context.percent;
+    let contextPercent = e.context.percent === undefined ? undefined : Math.round(e.context.percent);
     let contextLimit = e.context.window;
     let isToCompact = false;
     let contextGroups;
@@ -229,7 +232,7 @@ export function register(on) {
       Button({ key: "compact", label: "Compact", hotkey: "c", variant: "secondary", onPress: async () => {
         try { await $.session.compact(); } catch { $.ui.toast("Compact runs between turns. Try again when this one ends."); }
       } }),
-      Button({ key: "collapse", label: collapsed ? "▸" : "▾", hotkey: "h", plain: true, onPress: async () => {
+      Button({ key: "collapse", label: collapsed ? "▸" : "▾", hotkey: "h", onPress: async () => {
         await update($, isCollapsed, () => !collapsed);
         await $.store.set("isCollapsed", !collapsed);
       } }),
@@ -260,7 +263,7 @@ export function register(on) {
         hasContext && percentChip("ctx", contextPercent),
         costUsd !== undefined && `$${costUsd.toFixed(2)}`,
       ].filter(Boolean);
-      if (!parts.length) return next(e);
+      // Nothing to show still draws the buttons, so a collapsed band can be expanded.
       lines = [row("head", join(parts.map((children) => ({ children })), "  "))];
     } else {
       const v = limits.length ? verdict(limits.map(([, , l]) => l), now) : null;

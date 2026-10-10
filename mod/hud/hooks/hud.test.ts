@@ -229,6 +229,17 @@ test("collapsed, the band is one line of circles, kept across sessions", async (
   await ui.unmount();
 });
 
+test("a collapsed band with nothing to show still has its buttons", async ($, on) => {
+  on("ui.render", () => ENGINE as never);
+  on("store.get", (_$, e) => ({ value: e.key === "isCollapsed" ? true : undefined }) as never);
+  on("command.register", () => ({ value: undefined }) as never);
+  on("session.start", () => ({ cwd: "/p" }));
+  await $.session.start({ cwd: "/p" } as never);
+  const ui = await band($);
+  expect((await ui.find({ key: "collapse" }))?.props.label).toBe("▸");
+  await ui.unmount();
+});
+
 test("Compact compacts the conversation", async ($, on) => {
   let compacts = 0;
   on("ui.render", () => ENGINE as never);

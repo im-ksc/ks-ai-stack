@@ -3,7 +3,7 @@
 A Claude Code mod that draws a band of up to six lines above the prompt. The first line holds the git branch, a one-sentence verdict on the usage limits, the session's cost and tokens, and two buttons. Under it, the 5-hour and weekly limits sit on the left and the context on the right.
 
 ```text
-⎇ feat/hud* │ On track. You should reach Wednesday's reset with room to spare. │ $0.42 · 1.2M in · 38k out  [ Compact ] ▾
+⎇ feat/hud* │ On track. You should reach Wednesday's reset with room to spare. │ $0.42 · 1.2M in · 38k out  [ Compact ] [ ▾ ]
 5 Hour ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┃━━━━━━───  81%   ████████████▓▓▓▒▒░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
   On pace for ~87% · resets in 23m                         Context 24% to compact                   120k left of 160k
 Weekly ━━━━━━━━┃━━━━──────────────────────────────────  20%   Messages                                                190k
@@ -14,7 +14,7 @@ Weekly ━━━━━━━━┃━━━━───────────�
 Collapsed, it's one line, and each bar becomes a circle:
 
 ```text
-⎇ feat/hud*  ◕ 3/5  5h ◕ 81%  wk ◔ 20%  ctx ◔ 30%  $0.42                                                 [ Compact ] ▸
+⎇ feat/hud*  ◕ 3/5  5h ◕ 81%  wk ◔ 20%  ctx ◔ 30%  $0.42                                                 [ Compact ] [ ▸ ]
 ```
 
 ## What this shows
@@ -53,7 +53,7 @@ The patterns it demonstrates:
 
 The recording shows version 0.2, before the redesign. Claude works through a four-item todo list in a new repo on `feat/demo`. The branch gets a `*` once the first file exists, the todo bar fills with the current item beside it, and the context, cost and token figures fill in when the turn ends. The recording is scripted: run `vhs mod/hud/demo/hud.tape` from the repo root in a plain terminal to make it again.
 
-![HUD band filling its todo bar as Claude creates four files](demo/hud.gif)
+![The HUD band in version 0.2, filling its todo bar as Claude creates four files](demo/hud.gif)
 
 ## How it was built
 
