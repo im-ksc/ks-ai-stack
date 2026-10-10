@@ -108,7 +108,7 @@ No environment variables or configuration.
 - Edits made by subagents are included in the main turn's replay.
 - Claude Code 2.1.280 has no MultiEdit tool. The mod handles MultiEdit, one step per edit, for builds that have it. That path is untested.
 - If the terminal can't place a pane, the replay is drawn in the band above the prompt instead. That fallback is untested, because every width we tried (80 and 120 columns) placed the pane.
-- The band above the prompt is shared. The hint draws another mod's band, such as the hud's, under it. While the replay is drawn in the band, it takes the whole band.
+- The band above the prompt is shared. The hint draws another mod's band, such as the hud's, under it. While the replay is drawn in the band, it leaves out the band beneath it, though a mod that runs first, such as hud, still draws above it.
 
 ## Dependencies
 

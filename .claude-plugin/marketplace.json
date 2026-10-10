@@ -6,7 +6,7 @@
     {
       "name": "replay-theater",
       "source": "./mod/replay-theater",
-      "description": "Step through the file edits Claude made in the last turn, one diff at a time.",
+      "description": "Replay Theater: step through the file edits Claude made in the last turn, one diff at a time.",
       "version": "0.1.1"
     },
     {

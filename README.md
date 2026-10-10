@@ -50,7 +50,7 @@ Run `npx skills update -g` to pull later changes from `main`.
 
 ## License
 
-replay-theater is Apache-2.0, copied from [anthropics/claude-code-playground](https://github.com/anthropics/claude-code-playground). hud has no license yet. Each skill keeps its upstream license, listed in the [skills table](.agents/skills/README.md).
+replay-theater is Apache-2.0, copied from [anthropics/claude-code-playground](https://github.com/anthropics/claude-code-playground). hud has no license yet. Each skill copied from another repo keeps that repo's license, listed in the [skills table](.agents/skills/README.md).
 
 ## Working on this repo
 
