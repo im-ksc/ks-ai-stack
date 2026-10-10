@@ -123,9 +123,12 @@ test("the band names the edit count and Done closes the pane", async ($, on) => 
   await $.turn.start({ turnId: "t1" } as never);
   await $.tool.call({ tool: "Edit", file_path: "/p/a.js", old_string: "1", new_string: "2" });
   await $.turn.complete({ turnId: "t1", reason: "answer", answer: "", durationMs: 1, isAborted: false });
-  const band = await $.ui.mount({ plugin: "replay-theater", surface: "terminal", component: "AbovePrompt", props: {} as never });
-  expect(await band.find({ type: "Text", text: /^1 edit in the last turn$/ })).toBeDefined();
-  await band.unmount();
+  for (const surface of ["terminal", "desktop"] as const) {
+    const band = await $.ui.mount({ plugin: "replay-theater", surface, component: "AbovePrompt", props: {} as never });
+    expect(await band.find({ type: "Text", text: /^1 edit in the last turn$/ })).toBeDefined();
+    expect((await band.find({ key: "open-replay" }))?.props.hotkey).toBe(surface === "desktop" ? undefined : "r");
+    await band.unmount();
+  }
   const ui = await $.ui.mount({ plugin: "replay-theater", surface: "terminal", component: "Pane", requestId: "replay-theater", props: {} as never });
   expect((await ui.find({ key: "next" }))?.props.label).toBe("Done");
   await ui.press({ key: "next" });

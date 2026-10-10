@@ -14,7 +14,7 @@ Open it, and a pane shows:
 
 - A summary, such as "5 edits in 3 files, +12 −4", and how many edits you've reviewed.
 - A timeline with one row per edit: the file name, its folder, and its added and removed line counts. The current edit has a `›` pointer, reviewed edits have a green ✓, and clicking a row jumps to that edit. A long turn shows 8 rows at a time.
-- The current edit's heading, such as "Edit 2 of 5 · greet.js", with a note for a new file, a rewrite, a replace-all or a MultiEdit part.
+- The current edit's heading, such as "Edit 2 of 5 · greet.js", with a note for a new file, a rewrite, a replace-all, a MultiEdit part or a Bash change.
 - Buttons: Previous, Next (Done on the last edit), Reviewed, Explain and Close.
 - The diff, with removed and added lines tinted red and green and the changed words highlighted inside them.
 - Explain asks the model what the edit does and why. It answers in plain language for a non-technical reader, and the answer shows under the diff. Each edit is explained once, and the answer stays when you move away and back.
@@ -96,7 +96,7 @@ No environment variables or configuration.
 4. Ask Claude for a change that edits files, for example "rename the function greet to welcome everywhere".
 5. When the turn ends, open the replay in one of two ways:
    - Type `/replay` and press Enter.
-   - Press `ctrl+x` then `Tab` to focus the band above the prompt, then press `r` (or Enter on the Replay button).
+   - Press `ctrl+x` then `Tab` to focus the band above the prompt, then press `r` (or Enter on the Replay button). In the desktop app, click the Replay button.
 6. In the pane:
 
    | Key | Does |
