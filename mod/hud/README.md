@@ -30,6 +30,12 @@ The patterns it demonstrates:
 - Watching tool results in `tool.call` after `next(e)`, without changing them.
 - A slash command whose setting is kept in `$.store`.
 
+## Demo
+
+Claude works through a four-item todo list in a new repo on `feat/demo`. The branch gets a `*` once the first file exists, the todo bar fills with the current item beside it, and the context, cost and token figures appear when the turn ends. The recording is scripted: run `vhs mod/hud/demo/hud.tape` from the repo root in a plain terminal to make it again.
+
+![HUD band filling its todo bar as Claude creates four files](demo/hud.gif)
+
 ## How it was built
 
 - **Model:** built with Claude in Claude Code. The mod itself doesn't call a model.
