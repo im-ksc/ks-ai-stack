@@ -7,6 +7,7 @@ Claude Code mods and agent skills by imksc. Mods live in `mod/<name>`, skills in
 ```bash
 claude plugin marketplace add im-ksc/ks-ai-stack
 claude plugin install replay-theater@ks-ai-stack
+claude plugin install hud@ks-ai-stack
 ```
 
 Restart Claude Code after installing.
@@ -16,6 +17,7 @@ Restart Claude Code after installing.
 ![Replay Theater stepping through a three-file rename](mod/replay-theater/demo/replay-theater.gif)
 
 - [replay-theater](mod/replay-theater): step through the file edits Claude made in the last turn, one diff at a time. Run `/replay`.
+- [hud](mod/hud): a two-line band above the prompt with the branch, todo progress, context, cost and usage limits. Run `/hud` to hide it.
 
 ## Skills
 
