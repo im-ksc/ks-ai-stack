@@ -1,0 +1,9 @@
+{
+  "name": "hud",
+  "version": "0.1.0",
+  "description": "A two-line band above the prompt: branch, todo progress, context, cost and usage limits.",
+  "author": {
+    "name": "imksc"
+  },
+  "types": "./types/index.d.ts"
+}
