@@ -62,6 +62,8 @@ test("the pane draws the timeline and steps through edits", async ($, on) => {
     for (const [key, label] of [["prev", "Previous"], ["next", "Done"], ["explain", "Explain"], ["close", "Close"]]) {
       expect((await ui.find({ key }))?.props.label).toBe(label);
     }
+    // The desktop draws hotkeys as chips on its buttons, so it gets none.
+    expect((await ui.find({ key: "next" }))?.props.hotkey).toBe(surface === "desktop" ? undefined : "n");
     expect(await ui.find({ key: "open" })).toBeUndefined();
     await ui.press({ key: "go0" });
     expect(await ui.find({ type: "Text", text: /^README\.md$/ })).toBeDefined();
@@ -91,7 +93,8 @@ test("Explain asks the model about the current edit and keeps the answer", async
   expect(asked.length).toBe(1);
   expect(asked[0]).toContain("a.js");
   expect(asked[0]).toContain("+let y = 1;");
-  expect(asked[0]).toMatch(/as simply as/);
+  expect(asked[0]).toMatch(/non-technical/);
+  expect(asked[0]).not.toMatch(/2 to 5|each changed line/);
   expect(asked[0]).toContain("Avoid em dashes");
   expect(asked[0]).not.toContain("name: unslop");
   expect((await ui.find({ key: "explain" }))?.props.label).toBe("Explaining…");
@@ -120,9 +123,12 @@ test("the band names the edit count and Done closes the pane", async ($, on) => 
   await $.turn.start({ turnId: "t1" } as never);
   await $.tool.call({ tool: "Edit", file_path: "/p/a.js", old_string: "1", new_string: "2" });
   await $.turn.complete({ turnId: "t1", reason: "answer", answer: "", durationMs: 1, isAborted: false });
-  const band = await $.ui.mount({ plugin: "replay-theater", surface: "terminal", component: "AbovePrompt", props: {} as never });
-  expect(await band.find({ type: "Text", text: /^1 edit in the last turn$/ })).toBeDefined();
-  await band.unmount();
+  for (const surface of ["terminal", "desktop"] as const) {
+    const band = await $.ui.mount({ plugin: "replay-theater", surface, component: "AbovePrompt", props: {} as never });
+    expect(await band.find({ type: "Text", text: /^1 edit in the last turn$/ })).toBeDefined();
+    expect((await band.find({ key: "open-replay" }))?.props.hotkey).toBe(surface === "desktop" ? undefined : "r");
+    await band.unmount();
+  }
   const ui = await $.ui.mount({ plugin: "replay-theater", surface: "terminal", component: "Pane", requestId: "replay-theater", props: {} as never });
   expect((await ui.find({ key: "next" }))?.props.label).toBe("Done");
   await ui.press({ key: "next" });

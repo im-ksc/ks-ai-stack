@@ -7,10 +7,17 @@ A Claude Code mod that lets you step through the file edits Claude made in the l
 While a turn runs, Replay Theater records each file edit Claude makes (the Edit, Write and MultiEdit tool calls): the file, and the text before and after. It also records Bash commands that change a file named in the command, such as `sed -i` or `cat > file`; files reached through a glob, `find` or a `cd` are missed. When the turn ends, a hint appears above the prompt:
 
 ```text
-▶ Replay: 5 edits (press r)  [ Replay ]
+5 edits in the last turn  [ Replay ]
 ```
 
-Open it, and a pane shows one edit at a time: the file, the tool, a count of added and removed lines, and a short diff in red and green. A strip of numbered cells shows every step, with the current one highlighted, and the header reads "step 2 of 5". Prev, Next and Close buttons move through the steps.
+Open it, and a pane shows:
+
+- A summary, such as "5 edits in 3 files, +12 −4", and how many edits you've reviewed.
+- A timeline with one row per edit: the file name, its folder, and its added and removed line counts. The current edit has a `›` pointer, reviewed edits have a green ✓, and clicking a row jumps to that edit. A long turn shows 8 rows at a time.
+- The current edit's heading, such as "Edit 2 of 5 · greet.js", with a note for a new file, a rewrite, a replace-all, a MultiEdit part or a Bash change.
+- Buttons: Previous, Next (Done on the last edit), Reviewed, Explain and Close.
+- The diff, with removed and added lines tinted red and green and the changed words highlighted inside them.
+- Explain asks the model what the edit does and why. It answers in plain language for a non-technical reader, and the answer shows under the diff. Each edit is explained once, and the answer stays when you move away and back.
 
 Replay Theater only watches. It never blocks, changes or delays an edit.
 
@@ -20,6 +27,8 @@ The patterns it demonstrates:
 - Grouping work by turn with `turn.start` and `turn.complete`, and skipping subagent turns.
 - A slash command (`/replay`) registered from `session.start` and handled in `command.run`.
 - A `Pane` with `Button` elements and hotkeys, with a fallback to the `AbovePrompt` band.
+- Hotkeys left off in the desktop app, which would draw them as chips on its buttons.
+- `$.model.fork` to ask a question over the session's own conversation.
 
 ## Demo
 
@@ -29,7 +38,7 @@ Claude renames a function across three files. `/replay` opens the pane: `n` move
 
 ## How it was built
 
-- **Model:** built with Claude in Claude Code. The test runs and screenshots used Claude Sonnet 5. The mod itself doesn't call a model.
+- **Model:** built with Claude in Claude Code. The test runs and screenshots used Claude Sonnet 5. The mod calls a model only for Explain, which forks the session: it uses the session's model and sees the conversation, so it can say why an edit was made.
 - **Prompt(s):** the mod started as one of ten ideas Claude wrote for mods. This is the idea as written:
 
   > **Replay Theater.** _Scrub through what Claude just did._ After a turn, a pane opens with a timeline of every edit. Buttons step forward and back, and each step shows its diff. It uses `ui.render` on `Pane`, with `Button` elements, and it records each edit from `tool.call`. It builds on the built-in diff mod. A developer would install it to review a long run in a minute, and it makes a strong demo clip. _A bigger project,_ because the timeline needs its own state.
@@ -45,13 +54,14 @@ Claude renames a function across three files. `/replay` opens the pane: `n` move
   - A Write can replace a whole file, so the diff keeps only one line of context around each change, and caps each step at 12 lines.
   - Tested in Claude Code: a rename across three files made 5 edits, and the pane stepped through all of them with Prev, Next and Close. A Write of a new file showed as one step.
   - 0.1.1: the hint replaced the hud band after each turn. It now draws the band beneath it under the hint.
+  - 0.1.2: the desktop app showed each button's hotkey as a chip, so the buttons there have no hotkeys. Explain now writes for a non-technical reader, about the edit as a whole, at whatever length the edit needs.
 
 ## Run it
 
 **Requirements:**
 
 - Claude Code 2.1.287 or later, where mods load by default. The mod was built and tested on 2.1.280, and `claude plugin validate` passes on 2.1.285.
-- A terminal. The pane is placed inline above the prompt, or docked to the right in the fullscreen layout.
+- A terminal or the Claude desktop app. In a terminal, the pane is placed inline above the prompt, or docked to the right in the fullscreen layout.
 
 No environment variables or configuration.
 
@@ -86,7 +96,7 @@ No environment variables or configuration.
 4. Ask Claude for a change that edits files, for example "rename the function greet to welcome everywhere".
 5. When the turn ends, open the replay in one of two ways:
    - Type `/replay` and press Enter.
-   - Press `ctrl+x` then `Tab` to focus the band above the prompt, then press `r` (or Enter on the Replay button).
+   - Press `ctrl+x` then `Tab` to focus the band above the prompt, then press `r` (or Enter on the Replay button). In the desktop app, click the Replay button.
 6. In the pane:
 
    | Key | Does |
@@ -94,9 +104,10 @@ No environment variables or configuration.
    | `v` | Mark the step reviewed and go to the next one (press again to unmark) |
    | `n` | Next step |
    | `p` | Previous step |
+   | `e` | Explain the edit in plain language |
    | `c` or `Escape` | Close the pane |
 
-   Mouse clicks on the buttons work too. The replay stays available until the next turn that edits files. A turn with no edits keeps the previous replay.
+   Mouse clicks on the buttons work too. In the desktop app the buttons have no hotkeys, so click them. The replay stays available until the next turn that edits files. A turn with no edits keeps the previous replay.
 
 ## Notes / limitations
 
@@ -104,6 +115,8 @@ No environment variables or configuration.
 - For Edit, the diff is between `old_string` and `new_string`, not the whole file. The file's line numbers aren't shown.
 - For Write, the old text is read from disk just before the write. Files over 400 lines are shown as all removed, then all added, with no line matching.
 - Edits are recorded when the tool is called. An edit that you then deny, or that fails, still shows in the replay.
+- Explain forks the session: it uses the session's model and sends the whole conversation with the question. The prompt cache usually covers the conversation, but after `/model` or once the cache has expired, the whole conversation is billed again. It has nothing to fork before Claude's first reply or after `/clear`, and then shows an error.
+- Explain adds the rules from the unslop skill at `~/.claude/skills/unslop/SKILL.md` to its prompt when that file exists.
 - The replay is kept in memory for the current session only. It is lost when Claude Code restarts, or when the plugin reloads.
 - Edits made by subagents are included in the main turn's replay.
 - Claude Code 2.1.280 has no MultiEdit tool. The mod handles MultiEdit, one step per edit, for builds that have it. That path is untested.

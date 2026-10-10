@@ -119,8 +119,9 @@ async function explain($, step) {
   $.ui.invalidate("ui.render");
   const rules = await unslopRules($);
   const r = await $.model.fork({ prompt:
-    `Explain this edit to ${step.file} as simply as you can, for someone new to the code. ` +
-    `Use 2 to 5 short Markdown bullet points: what each changed line does and why it changed. No preamble.` +
+    `Explain this edit to ${step.file} to a non-technical person: what it changes and why, in everyday words. ` +
+    `Describe what the edit does as a whole, not line by line. Avoid jargon and code names; if one can't be avoided, say what it means in a few words. ` +
+    `Simplify as much as you can: a small edit needs a sentence or two, a complex one as much as it takes. Markdown, no preamble.` +
     (rules ? `\n\nWrite it following these rules:\n\n${rules}` : "") +
     `\n\n\`\`\`diff\n${unifiedDiff(step.diff)}\n\`\`\`` })
     .catch((err) => ({ isAnswered: false, reason: String(err?.message ?? err) }));
@@ -154,6 +155,8 @@ async function openReplay($) {
 // surface can't place a pane (there without the timeline).
 function replayView($, e, inBand) {
   const { Box, Text, Button, Markdown } = $.ui.resolve(e);
+  // The desktop draws hotkeys as chips on its buttons, so it gets none.
+  const hotkey = (h) => (e.surface === "desktop" ? {} : { hotkey: h });
   const total = state.replay.length;
   if (!total) return Text({ dimColor: true, children: "No edits to replay." });
   const k = Math.max(0, Math.min(state.index, total - 1));
@@ -253,14 +256,14 @@ function replayView($, e, inBand) {
       ] }),
       // Buttons that don't fit wrap to another row, a blank line apart.
       Box({ key: "buttons", flexDirection: "row", flexWrap: "wrap", columnGap: 2, rowGap: 1, children: [
-        Button({ key: "prev", label: "Previous", hotkey: "p", variant: "secondary", dimColor: k === 0, onPress: () => go(k - 1) }),
-        Button({ key: "next", label: last ? "Done" : "Next", hotkey: "n", variant: "secondary", onPress: () => (last ? close() : go(k + 1)) }),
+        Button({ key: "prev", label: "Previous", ...hotkey("p"), variant: "secondary", dimColor: k === 0, onPress: () => go(k - 1) }),
+        Button({ key: "next", label: last ? "Done" : "Next", ...hotkey("n"), variant: "secondary", onPress: () => (last ? close() : go(k + 1)) }),
         // Marks the edit and moves on; on a reviewed edit, removes the mark.
-        Button({ key: "reviewed", label: step.reviewed ? "Unreview" : "Reviewed", hotkey: "v", variant: "primary", autoFocus: true,
+        Button({ key: "reviewed", label: step.reviewed ? "Unreview" : "Reviewed", ...hotkey("v"), variant: "primary", autoFocus: true,
           onPress: () => { step.reviewed = !step.reviewed; go(step.reviewed ? k + 1 : k); } }),
         Button({ key: "explain", label: step.explain?.pending ? "Explaining…" : step.explain?.text ? "Explained" : "Explain",
-          hotkey: "e", variant: "secondary", dimColor: !!step.explain?.text, onPress: () => { explain($, step); } }),
-        Button({ key: "close", label: "Close", hotkey: "c", role: "dismiss", dimColor: true, onPress: close }),
+          ...hotkey("e"), variant: "secondary", dimColor: !!step.explain?.text, onPress: () => { explain($, step); } }),
+        Button({ key: "close", label: "Close", ...hotkey("c"), role: "dismiss", dimColor: true, onPress: close }),
       ] }),
       Box({ key: "diff", flexDirection: "column", borderStyle: "round", borderColor: "gray", children: diffRows }),
       step.explain?.text ? Box({ flexDirection: "column", children: [
@@ -331,7 +334,7 @@ export function register(on, options) {
       key: "replay-hint", flexDirection: "row", gap: 2, paddingX: 1,
       children: [
         Text({ color: "magenta", bold: true, children: hintText() }),
-        Button({ key: "open-replay", label: "Replay", hotkey: "r", onPress: () => openReplay($) }),
+        Button({ key: "open-replay", label: "Replay", ...(e.surface !== "desktop" && { hotkey: "r" }), onPress: () => openReplay($) }),
       ],
     });
     // Another mod's band, such as hud, stays under the hint.
