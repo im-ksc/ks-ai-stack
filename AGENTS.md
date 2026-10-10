@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Personal Claude Code mods (plugins built on function hooks), published as one plugin marketplace. The repo has one owner and no other contributors. Keep changes small and in the style of what's already here.
+Personal Claude Code mods (plugins built on function hooks), published as one plugin marketplace, plus the owner's agent skills. The repo has one owner and no other contributors. Keep changes small and in the style of what's already here.
 
 ## Layout
 
@@ -31,7 +31,7 @@ Tests import from `claude-code/testing` and run inside the Claude Code binary. D
 
 1. Create `mod/<name>/` with the layout above, and start the version at `0.1.0`.
 2. Add an entry to `.claude-plugin/marketplace.json` with `"source": "./mod/<name>"`, plus the same version and description as `plugin.json`.
-3. In the root `README.md`, add a bullet under **Mods** (and its GIF, if there is one), and add a `claude plugin install <name>@ks-claude-code-mods` line under **Install**.
+3. In the root `README.md`, add a bullet under **Mods** (and its GIF, if there is one), and add a `claude plugin install <name>@ks-ai-stack` line under **Install**.
 4. Write `mod/<name>/README.md` with the same sections as `mod/replay-theater/README.md`. Tests are optional, but if the mod has them, they must pass.
 
 ## Changing a mod
@@ -43,7 +43,7 @@ Tests import from `claude-code/testing` and run inside the Claude Code binary. D
 
 Some mods started as copies from other repos (`replay-theater` came from `anthropics/claude-code-playground`). When working on one:
 
-- Change its README's install and run steps to use this repo (`im-ksc/ks-claude-code-mods`, marketplace `ks-claude-code-mods`, path `mod/<name>`), not the upstream one.
+- Change its README's install and run steps to use this repo (`im-ksc/ks-ai-stack`, marketplace `ks-ai-stack`, path `mod/<name>`), not the upstream one.
 - Keep the original copyright and SPDX license headers in the source files. Don't remove or rewrite them.
 
 ## Skills

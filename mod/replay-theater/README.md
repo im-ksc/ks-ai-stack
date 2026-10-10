@@ -59,8 +59,8 @@ No environment variables or configuration.
 1. Clone this repository:
 
    ```bash
-   git clone https://github.com/im-ksc/ks-claude-code-mods.git
-   cd ks-claude-code-mods
+   git clone https://github.com/im-ksc/ks-ai-stack.git
+   cd ks-ai-stack
    ```
 
 2. Check the plugin:
@@ -79,7 +79,7 @@ No environment variables or configuration.
 
    ```bash
    claude plugin marketplace add ./
-   claude plugin install replay-theater@ks-claude-code-mods --scope user
+   claude plugin install replay-theater@ks-ai-stack --scope user
    ```
 
 4. Ask Claude for a change that edits files, for example "rename the function greet to welcome everywhere".

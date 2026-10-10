@@ -1,7 +1,7 @@
 {
-  "name": "ks-claude-code-mods",
+  "name": "ks-ai-stack",
   "owner": { "name": "imksc" },
-  "description": "Claude Code mods by imksc.",
+  "description": "Claude Code mods and agent skills by imksc.",
   "plugins": [
     {
       "name": "replay-theater",
