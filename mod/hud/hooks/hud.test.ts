@@ -187,9 +187,12 @@ test("from 80 cells the limits and the context sit side by side; the desktop alw
   on("ui.render", () => ENGINE as never);
   on("session.measure", (_$, e) => ({ changed: e.changed }));
   await $.session.measure({ context: { tokens: 96000, window: 200000, percent: 48 }, rateLimits: limits([23, 2], [92, 48]), cost: { usd: 1 }, changed: ["context", "rateLimits", "cost"] });
-  for (const [surface, columns] of [["terminal", 80], ["desktop", 90], ["desktop", 60]] as const) {
+  for (const [surface, columns, gap] of [["terminal", 80, 1], ["desktop", 90, 0.5], ["desktop", 60, 0.5]] as const) {
     const ui = await band($, surface, columns);
-    expect((await ui.find({ key: "body" }))?.children).toHaveLength(2);
+    const body = await ui.find({ key: "body" });
+    expect(body?.children).toHaveLength(2);
+    expect(body?.props.marginTop).toBe(gap);
+    expect((await ui.find({ key: "limits" }))?.props.justifyContent).toBe("space-between");
     await ui.unmount();
   }
 });
@@ -203,6 +206,20 @@ test("the terminal's buttons have hotkeys; the desktop's are plain", async ($, o
     expect([(await ui.find({ key: "compact" }))?.props.hotkey, (await ui.find({ key: "collapse" }))?.props.hotkey]).toEqual(hotkeys);
     await ui.unmount();
   }
+});
+
+test("the desktop's collapse is a chromeless button over a drawn triangle", async ($, on) => {
+  const stored = store(on);
+  on("ui.render", () => ENGINE as never);
+  on("session.measure", (_$, e) => ({ changed: e.changed }));
+  await $.session.measure({ context: { window: 200000 }, rateLimits: [], cost: { usd: 1 }, changed: ["cost"] });
+  const ui = await band($, "desktop");
+  expect((await ui.find({ key: "collapse" }))?.props.plain).toBe(true);
+  expect((await ui.findAll({})).some((n) => n.props.alt === "Collapse")).toBe(true);
+  await ui.press({ key: "collapse" });
+  expect(stored.get("isCollapsed")).toBe(true);
+  expect((await ui.findAll({})).some((n) => n.props.alt === "Expand")).toBe(true);
+  await ui.unmount();
 });
 
 test("a narrow terminal stacks the bars and drops the detail rows", async ($, on) => {

@@ -36,7 +36,7 @@ In the desktop app, the bars are drawn as solid rounded bars that fill their col
 | Control | What it does |
 | --- | --- |
 | `Compact` (`c`) | Compacts the conversation, as `/compact` does. During a turn it says to try again when the turn ends. Any other failure shows the reason Claude Code gives. |
-| `▾` / `▸` (`h`) | Collapses the band to one line, or expands it. The choice is kept across sessions. |
+| `▾` / `▸` (`h`) | Collapses the band to one line, or expands it. The choice is kept across sessions. The desktop app draws a larger triangle without button shading. |
 | `/hud` | Hides or shows the whole band. The choice is kept across sessions. |
 
 The hotkeys work in a terminal while the band has the focus: click it, or press ctrl+x tab. The desktop app shows plain buttons without them.
@@ -77,6 +77,7 @@ The recording shows version 0.2, before the redesign. Claude works through a fou
   - 0.2.1: the replay-theater hint replaced the band after each turn. Both mods now draw the band beneath them under their own rows.
   - 0.3.0: a redesign settled in an interview, with a screenshot of another usage panel as the reference. The limits gained a pace tick, a projection and a verdict. The context bar is split by category. Compact and collapse buttons were added, and the todo bar moved to the collapsed line.
   - 0.3.1, after use in the desktop app: the band stacked at a normal window width, the buttons showed hotkey chips, and every Compact failure read as "between turns". The desktop now draws SVG bars in two columns with plain buttons, terminals split from 80 columns, and Compact shows the real reason it failed when no turn is running.
+  - 0.3.2: the two columns sat right under the headline, the usage column was shorter than the context column, and the collapse button was shaded. The body now has a gap above it, the usage rows spread to the context column's height, and the desktop's collapse control is a bigger triangle with no shading.
 
 ## Run it
 

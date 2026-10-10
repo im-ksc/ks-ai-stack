@@ -13,7 +13,7 @@
       "name": "hud",
       "source": "./mod/hud",
       "description": "A band above the prompt: usage limits with a pace verdict, context, branch and cost, with Compact and collapse buttons.",
-      "version": "0.3.1"
+      "version": "0.3.2"
     }
   ]
 }
