@@ -32,7 +32,7 @@ const level = (used) => (used >= 90 ? "error" : used >= 70 ? "warning" : "succes
 
 // 1.2M, 38k, 950.
 function count(n) {
-  if (n >= 1e6) return `${(n / 1e6).toFixed(1)}M`;
+  if (n >= 999_500) return `${(n / 1e6).toFixed(1)}M`; // not "1000k"
   if (n >= 1e3) return `${Math.round(n / 1e3)}k`;
   return String(n);
 }
