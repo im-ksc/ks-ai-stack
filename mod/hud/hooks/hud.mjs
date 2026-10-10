@@ -291,7 +291,7 @@ export function register(on) {
         Text({ children: [` ${label} `, Text({ color: level(percent), children: `${Math.round(percent)}%` }), resetsAt ? dim(` ↻ ${when(resetsAt, now, true)}`) : ""] }),
       ];
       const parts = [
-        b && [Text({ children: `⎇ ${b.name}${b.isDirty ? "*" : ""}` })],
+        b && [Text({ wrap: "truncate-end", children: `⎇ ${b.name}${b.isDirty ? "*" : ""}` })],
         ...limits.map(([, short, l]) => chip(short, l.percentUsed, l.resetsAt)),
         hasContext && chip("Context", contextPercent),
         costUsd !== undefined && [Text({ children: `$${costUsd.toFixed(2)}` })],
@@ -302,7 +302,7 @@ export function register(on) {
         Box({ key: "parts", flexGrow: 1, flexDirection: "row", justifyContent: "space-evenly", alignItems: "center",
           children: parts.flatMap((children, i) => [
             ...(i ? [Box({ key: `sep${i}`, children: sep })] : []),
-            Box({ key: `part${i}`, flexDirection: "row", alignItems: "center", flexShrink: 0, children }),
+            Box({ key: `part${i}`, flexDirection: "row", alignItems: "center", flexShrink: i === 0 && b ? 1 : 0, children }), // the branch is cut first
           ]) }),
         Box({ key: "gap", minWidth: 2 }),
         ...buttons.flatMap((button, i) => (i ? [Text({ children: " " }), button] : [button])),
