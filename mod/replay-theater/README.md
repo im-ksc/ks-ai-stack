@@ -44,6 +44,7 @@ Claude renames a function across three files. `/replay` opens the pane: `n` move
   - A pane only takes the keyboard while nothing else holds it. When the band's Replay button is pressed, the band holds the keys, so the mod hides the band and waits briefly before it opens the pane.
   - A Write can replace a whole file, so the diff keeps only one line of context around each change, and caps each step at 12 lines.
   - Tested in Claude Code: a rename across three files made 5 edits, and the pane stepped through all of them with Prev, Next and Close. A Write of a new file showed as one step.
+  - 0.1.1: the hint replaced the hud band after each turn. It now draws the band beneath it under the hint.
 
 ## Run it
 
@@ -107,7 +108,7 @@ No environment variables or configuration.
 - Edits made by subagents are included in the main turn's replay.
 - Claude Code 2.1.280 has no MultiEdit tool. The mod handles MultiEdit, one step per edit, for builds that have it. That path is untested.
 - If the terminal can't place a pane, the replay is drawn in the band above the prompt instead. That fallback is untested, because every width we tried (80 and 120 columns) placed the pane.
-- The band above the prompt is shared. If another mod also draws there, only one of them shows.
+- The band above the prompt is shared. The hint draws another mod's band, such as the hud's, under it. While the replay is drawn in the band, it takes the whole band.
 
 ## Dependencies
 

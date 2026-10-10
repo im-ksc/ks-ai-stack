@@ -160,13 +160,17 @@ export function register(on) {
     if (weekly) limits.push([dim("wk "), ...gauge(weekly.percentUsed), ` ${Math.round(weekly.percentUsed)}%`]);
 
     const lines = [["work", work], ["spend", spend], ["limits", limits]].filter(([, parts]) => parts.length);
-    if (!lines.length) return next(e);
+    const beneath = await next(e); // another mod's band, kept under this one
+    if (!lines.length) return beneath;
     return Box({
       flexDirection: "column",
-      children: lines.map(([key, parts]) => Box({
-        key, flexDirection: "row", gap: 3,
-        children: parts.map((children) => Text({ children })),
-      })),
+      children: [
+        ...lines.map(([key, parts]) => Box({
+          key, flexDirection: "row", gap: 3,
+          children: parts.map((children) => Text({ children })),
+        })),
+        beneath,
+      ].filter(Boolean),
     });
   });
 }

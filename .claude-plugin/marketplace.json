@@ -7,13 +7,13 @@
       "name": "replay-theater",
       "source": "./mod/replay-theater",
       "description": "Step through the file edits Claude made in the last turn, one diff at a time.",
-      "version": "0.1.0"
+      "version": "0.1.1"
     },
     {
       "name": "hud",
       "source": "./mod/hud",
       "description": "A three-line band above the prompt: branch, todo progress, context, cost and usage limits.",
-      "version": "0.2.0"
+      "version": "0.2.1"
     }
   ]
 }
