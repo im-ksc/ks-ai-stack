@@ -60,4 +60,4 @@ To pull the latest mods and skills from `main`:
 pnpm sync
 ```
 
-This runs `git pull --ff-only` in `~/.claude/mods/ks-ai-stack` (cloning it first if it's missing), then `npx skills update -g`. Use `pnpm sync:mods` or `pnpm sync:skills` for one half. It needs only Node and git, so `npm run sync` or `node scripts/sync.mjs` work too, on macOS, Linux and Windows. Restart Claude Code afterwards.
+This runs `git pull --ff-only` in `~/.claude/mods/ks-ai-stack` (cloning it first if it's missing), then `npx skills update -g`. Use `pnpm sync:mods` or `pnpm sync:skills` for one half. It needs only Node and git, so `npm run sync` or `node scripts/sync.mjs` work too, on macOS, Linux and Windows. It also warns if any mod in `mod/` is missing from `CLAUDE_CODE_PLUGIN_DIRS`, the setting Claude Code loads the clone's mods from, and prints the value to set. Restart Claude Code afterwards.
