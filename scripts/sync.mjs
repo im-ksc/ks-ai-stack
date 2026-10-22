@@ -1,7 +1,7 @@
 // Updates the local mods clone and the global skills from main.
 // Usage: node scripts/sync.mjs [mods|skills]   (no argument runs both)
 import { spawnSync } from "node:child_process";
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, realpathSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, delimiter, join, resolve } from "node:path";
 
@@ -40,16 +40,18 @@ function syncMods() {
 // Claude Code loads the mods only from folders named in CLAUDE_CODE_PLUGIN_DIRS,
 // set in the shell or in the "env" block of ~/.claude/settings.json.
 function checkPluginDirs() {
-  const mods = readdirSync(join(CLONE, "mod"), { withFileTypes: true })
+  const modRoot = join(CLONE, "mod");
+  if (!existsSync(modRoot)) return;
+  const mods = readdirSync(modRoot, { withFileTypes: true })
     .filter((d) => d.isDirectory())
-    .map((d) => join(CLONE, "mod", d.name));
+    .map((d) => join(modRoot, d.name));
   const listed = new Set(
     [process.env.CLAUDE_CODE_PLUGIN_DIRS, settingsPluginDirs()]
-      .flatMap((v) => (v ?? "").split(delimiter))
+      .flatMap((v) => (typeof v === "string" ? v.split(delimiter) : []))
       .filter((d) => d.trim())
-      .map((d) => resolve(d.trim()))
+      .map((d) => samePath(d.trim()))
   );
-  const missing = mods.filter((m) => !listed.has(m));
+  const missing = mods.filter((m) => !listed.has(samePath(m)));
   if (!missing.length) return;
   console.warn(`\nsync: Claude Code won't load these mods: ${missing.map((m) => basename(m)).join(", ")}.`);
   console.warn(`Set this in ~/.claude/settings.json under "env" (add any other folders you already list):`);
@@ -58,11 +60,20 @@ function checkPluginDirs() {
 
 function settingsPluginDirs() {
   try {
-    const settings = JSON.parse(readFileSync(join(homedir(), ".claude", "settings.json"), "utf8"));
-    return settings.env?.CLAUDE_CODE_PLUGIN_DIRS;
+    const text = readFileSync(join(homedir(), ".claude", "settings.json"), "utf8").replace(/^﻿/, "");
+    return JSON.parse(text).env?.CLAUDE_CODE_PLUGIN_DIRS;
   } catch {
     return undefined;
   }
+}
+
+// A comparable form of a path: symlinks resolved, and case folded on Windows.
+function samePath(p) {
+  let abs = resolve(p);
+  try {
+    abs = realpathSync(abs);
+  } catch {}
+  return process.platform === "win32" ? abs.toLowerCase() : abs;
 }
 
 function syncSkills() {
