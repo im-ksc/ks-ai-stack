@@ -83,7 +83,7 @@ The maintainer may:
 
 ## When to write to `.out-of-scope/`
 
-Only when an **enhancement** (not a bug) is *rejected* as `wontfix`. Record the rejected Plane work item here so the same request does not return as new work.
+Only when an **enhancement** (not a bug) is *rejected* as `wontfix`. Record the rejected Plane work item here so the same request does not return as new work. This also applies to an enhancement PR explicitly included by the user.
 
 Do **not** write here when something is closed as `wontfix` because it's **already implemented**. That's a built feature, not a rejected one; recording it would poison the dedup checks with false rejections. Instead, the closing comment points to where the feature already lives.
 

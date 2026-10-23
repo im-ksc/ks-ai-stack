@@ -62,7 +62,7 @@ Each ticket is a child work item in Plane. Locally, it is `.scratch/<feature-slu
 <the decision or investigation this ticket resolves>
 ```
 
-Each Plane ticket carries a `wayfinder:<type>` label, one of `research`, `prototype`, `grilling`, `task` (see [Ticket Types](#ticket-types)). A local ticket starts with its title, `Type`, `Status` (Open, Claimed, Done, or Cancelled), and `Blocked by` (local ticket links or None), followed by the question.
+Each Plane ticket carries a `wayfinder:<type>` label, one of `research`, `prototype`, `grilling`, `task` (see [Ticket Types](#ticket-types)). A local ticket starts with its title, `Type`, `Status` (Open, Claimed, Done, or Cancelled), and `Blocked by` (local ticket links or None), followed by the question. Maps and decision tickets carry only `wayfinder:` labels, not implementation triage labels.
 
 A session **claims** a Plane ticket by assigning it to the dev driving the map, **first**, before any work. For a local ticket, change `Status` to Claimed and record the claimant before working on it. Other sessions skip claimed tickets.
 
@@ -111,7 +111,7 @@ User invokes with a loose idea.
 1. **Name the destination.** Call the Skill tool twice, for "grilling" and "domain-modeling", to pin down what this map is finding its way to: the spec, decision, or change. The destination fixes the scope, so it's settled first.
 2. **Map the frontier.** Grill again, **breadth-first** this time: fan out across the whole space rather than deep on any one thread, surfacing the open decisions and the first steps takeable now. **If this surfaces no fog** (the way to the destination is already clear, the whole journey small enough for one session), you don't need a map. Stop and ask the user how they'd like to proceed.
 3. **Draft the map and initial tickets**, with Destination and Notes filled in, Decisions-so-far empty, and the fog sketched into **Not yet specified**. Show the draft and ask whether to add it to Plane Engineering.
-4. **Save the map and tickets.** If yes, create the Plane map and child work items, then wire blocking edges in a second pass. If no, write the local map and ticket files with `Blocked by` links. Return the Plane link or local map path for review.
+4. **Save the map and tickets.** If yes, create the Plane map and child work items, then wire blocking edges and cross-references in a second pass using real identifiers. If no, write the local map and ticket files with `Blocked by` links to their actual paths. Placeholder issue numbers can link to unrelated work. Return the Plane link or local map path for review.
 5. **Fire the research subagents.** For each `research` ticket you just created, spin up a subagent that calls the Skill tool with "research" to resolve it in parallel, capturing its findings on a throwaway `research/<name>` branch with a context pointer from the ticket.
 6. Stop: charting is one session's work; it hand-resolves nothing.
 
@@ -121,7 +121,7 @@ User invokes with a map (URL or number). A ticket is **optional**: without one, 
 
 1. Load the **map** from Plane or its local file: the low-res view, not every ticket body.
 2. Choose the ticket. If the user named one, use it. Otherwise take the first frontier ticket in order. **Claim it** before any work.
-3. Resolve it. **Zoom as needed**: fetch the full body of any related or closed ticket on demand; call the Skill tool for whichever skills the `## Notes` block names. If in doubt, call the Skill tool twice, for "grilling" and "domain-modeling".
+3. Resolve it as the type identified by its `wayfinder:<type>` label in Plane or its local `Type` field. **Zoom as needed**: fetch the full body of any related or closed ticket on demand; call the Skill tool for whichever skills the `## Notes` block names. If in doubt, call the Skill tool twice, for "grilling" and "domain-modeling".
 4. Record the resolution: post a Plane resolution comment and close the work item, or write the answer in the local ticket and set its status to Done. **Append a context pointer** to the map's Decisions-so-far.
 5. Draft newly-surfaced tickets. For a Plane map, ask whether to add them to Plane before creating them; if declined, save them as local ticket files and link them from the map. For a local map, add local ticket files. Graduate any fog the answer has made specifiable, clearing each graduated patch from **Not yet specified** so it lives only as its new ticket. If the answer reveals that a ticket (this one or another) sits beyond the destination, **rule it out of scope** rather than resolving it on the route. If the decision invalidates other parts of the map, update or delete those tickets.
 

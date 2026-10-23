@@ -100,7 +100,7 @@ The end-to-end behaviour this ticket makes work, from the user's perspective, no
 
 ## Blocked by
 
-- A reference to each blocking ticket, or "None (can start immediately)".
+- A reference to each blocking ticket, or "None (can start immediately)". Omit this section when blockers were set as native relationships.
 
 </issue-template>
 
