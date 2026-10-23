@@ -9,7 +9,7 @@ disable-model-invocation: true
 Scaffold optional per-repo configuration for the engineering skills:
 
 - **Triage labels**: the strings used for the three remaining triage roles
-- **Domain docs**: where `CONTEXT.md` and ADRs live, and the consumer rules for reading them
+- **Domain docs**: where the selected glossary and ADRs live, and the consumer rules for reading them
 
 This is a prompt-driven skill, not a deterministic script. Explore, present what you found, confirm with the user, then write.
 
@@ -20,7 +20,7 @@ This is a prompt-driven skill, not a deterministic script. Explore, present what
 Look at the current repo to understand its starting state. Read whatever exists; don't assume:
 
 - `AGENTS.md` and `CLAUDE.md` at the repo root: does either exist? Is there already an `## Agent skills` section in either?
-- `CONTEXT.md` and `CONTEXT-MAP.md` at the repo root
+- `GLOSSARY.md` and `GLOSSARY-MAP.md`, plus legacy `CONTEXT.md` and `CONTEXT-MAP.md`, at the repo root. Follow the [glossary rules](domain.md) to resolve the authoritative document.
 - `docs/adr/` and any `src/*/docs/adr/` directories
 - `docs/agents/`: does this skill's prior output already exist?
 - Is the `triage` skill installed? (a `triage` skill folder alongside this one, or `triage` in your available skills.) This decides whether the label section runs.
@@ -42,9 +42,9 @@ If it is installed, ask exactly one question:
 
 The defaults are `needs-triage`, `needs-info`, and `wontfix`. On **yes**, write them as-is. If the user says no because the tracker uses other names, collect the overrides so `triage` applies those labels instead of creating duplicates. Accepted work uses the tracker's workflow state, not a readiness label.
 
-**Domain docs.** Default to **single-context** (one `CONTEXT.md` + `docs/adr/` at the repo root). This fits almost every repo; write it without asking.
+**Domain docs.** Keep an existing or explicitly configured glossary convention. If both conventions exist without a clear authority, ask before writing. For a new project, default to **single-context**, one `GLOSSARY.md` and `docs/adr/` at the repo root.
 
-Offer **multi-context** (a root `CONTEXT-MAP.md` pointing to per-context `CONTEXT.md` files) only when exploration found monorepo signals. Then confirm which layout they want.
+Offer **multi-context**, a root `GLOSSARY-MAP.md` pointing to per-context glossaries, only when exploration found monorepo signals. Then confirm the layout. Keep existing `CONTEXT` maps and filenames in place.
 
 ### 3. Confirm and edit
 
@@ -78,7 +78,7 @@ The block:
 
 ### Domain docs
 
-[one-line summary of layout: "single-context" or "multi-context"]. See `docs/agents/domain.md`.
+[one-line summary of layout and the authoritative glossary or map path]. See `docs/agents/domain.md`.
 ```
 
 Include the `### Triage labels` sub-block, and write `docs/agents/triage-labels.md`, only when `triage` is installed and its label section ran. When it isn't, both are omitted.
@@ -86,7 +86,7 @@ Include the `### Triage labels` sub-block, and write `docs/agents/triage-labels.
 Then write the docs files using the seed templates in this skill folder as a starting point:
 
 - [triage-labels.md](./triage-labels.md): label mapping (only if `triage` is installed)
-- [domain.md](./domain.md): domain doc consumer rules + layout
+- [domain.md](./domain.md): domain doc consumer rules + layout. Record the selected glossary or map location in the generated guide so later sessions reuse it.
 
 ### 5. Done
 

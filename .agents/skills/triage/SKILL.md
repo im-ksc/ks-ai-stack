@@ -6,7 +6,9 @@ disable-model-invocation: true
 
 # Triage
 
-Triage incoming work in [Plane Engineering](../setup-matt-pocock-skills/issue-tracker-plane.md).
+Triage incoming work in [Plane Engineering](../setup-matt-pocock-skills/issue-tracker-plane.md). Resolve the project glossary using the [glossary rules](../setup-matt-pocock-skills/domain.md).
+
+When the user explicitly includes a PR, read its diff and verify its claimed behavior with relevant tests or commands. Do not add automatic PR discovery.
 
 Every comment or issue posted to the issue tracker during triage **must** start with this disclaimer:
 
@@ -67,7 +69,7 @@ Show counts and a one-line summary per item. Let the maintainer pick.
 
 3. **Verify the claim.** Before any grilling, check that the claim holds up. For a bug, reproduce it from the reporter's steps. Report what happened: confirmed (with code path), failed, or insufficient detail (a strong `needs-info` signal). A confirmed verification makes a much stronger agent brief.
 
-4. **Grill (if needed).** If the request needs fleshing out, call the Skill tool twice, for "grilling" and "domain-modeling", and grill it into shape a round of questions at a time, sharpening domain terms and updating `CONTEXT.md`/ADRs inline as decisions land.
+4. **Grill (if needed).** If the request needs fleshing out, call the Skill tool twice, for "grilling" and "domain-modeling", and grill it into shape a round of questions at a time, sharpening domain terms and updating the selected glossary and ADRs inline as decisions land.
 
 5. **Apply the outcome:**
    - **Accepted**: post an agent brief comment ([AGENT-BRIEF.md](AGENT-BRIEF.md)). If human work is required, say why in the brief. Move the item to `Todo`.

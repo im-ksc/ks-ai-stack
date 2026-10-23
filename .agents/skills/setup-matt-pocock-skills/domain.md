@@ -1,51 +1,31 @@
-# Domain Docs
+# Domain docs
 
-How the engineering skills should consume this repo's domain documentation when exploring the codebase.
+How the engineering skills consume a project's glossary and architecture decisions.
+
+## Choose the glossary
+
+1. Follow an explicit glossary location in the project's `AGENTS.md`, `CLAUDE.md`, or `docs/agents/domain.md`. When this file is installed as that project guide, record the selected location here.
+2. Otherwise, inspect `GLOSSARY.md` and `GLOSSARY-MAP.md`, plus the legacy `CONTEXT.md` and `CONTEXT-MAP.md`. A map points to the relevant per-context glossaries. Continue reading and updating an existing convention in place.
+3. If both conventions exist without a configured authority, ask which is authoritative before writing. Read both as needed to identify the ambiguity. Do not rename files or maintain duplicate glossaries automatically.
+4. When no glossary is configured and neither convention exists, use `GLOSSARY.md` for a new glossary, or `GLOSSARY-MAP.md` for a confirmed multi-context layout. Create these lazily when a term is resolved, not just because they are absent.
+
+References to the project glossary in these skills mean the selected file, even when its name is `CONTEXT.md`. A `/teach` workspace's learning glossary is separate; it does not override the configured project glossary.
 
 ## Before exploring, read these
 
-- **`CONTEXT.md`** at the repo root, or
-- **`CONTEXT-MAP.md`** at the repo root if it exists: it points at one `CONTEXT.md` per context. Read each one relevant to the topic.
-- **`docs/adr/`**: read ADRs that touch the area you're about to work in. In multi-context repos, also check `src/<context>/docs/adr/` for context-scoped decisions.
+- The selected glossary, or the relevant glossaries linked from its map.
+- `docs/adr/` decisions that touch the area under discussion. In multi-context repos, also check `src/<context>/docs/adr/` for context-scoped decisions.
 
-If any of these files don't exist, **proceed silently**. Don't flag their absence; don't suggest creating them upfront. The `/domain-modeling` skill (reached via `/grill-with-docs` and `/improve-codebase-architecture`) creates them lazily when terms or decisions actually get resolved.
+Proceed silently when these documents are absent. `/domain-modeling` creates them lazily when terms or decisions are resolved.
 
 ## File structure
 
-Single-context repo (most repos):
-
-```
-/
-├── CONTEXT.md
-├── docs/adr/
-│   ├── 0001-event-sourced-orders.md
-│   └── 0002-postgres-for-write-model.md
-└── src/
-```
-
-Multi-context repo (presence of `CONTEXT-MAP.md` at the root):
-
-```
-/
-├── CONTEXT-MAP.md
-├── docs/adr/                          ← system-wide decisions
-└── src/
-    ├── ordering/
-    │   ├── CONTEXT.md
-    │   └── docs/adr/                  ← context-specific decisions
-    └── billing/
-        ├── CONTEXT.md
-        └── docs/adr/
-```
+Most repos use one root `GLOSSARY.md` and `docs/adr/`. Multi-context repos use a root `GLOSSARY-MAP.md` pointing to each context's glossary and, where needed, its own ADR directory. Existing `CONTEXT` layouts follow the same structure and keep their names.
 
 ## Use the glossary's vocabulary
 
-When your output names a domain concept (in an issue title, a refactor proposal, a hypothesis, a test name), use the term as defined in `CONTEXT.md`. Don't drift to synonyms the glossary explicitly avoids.
-
-If the concept you need isn't in the glossary yet, that's a signal: either you're inventing language the project doesn't use (reconsider) or there's a real gap (note it for `/domain-modeling`).
+When output names a domain concept, use the term as defined in the selected glossary. Avoid synonyms the glossary rejects. A missing concept may be invented language to reconsider or a real gap for `/domain-modeling`.
 
 ## Flag ADR conflicts
 
-If your output contradicts an existing ADR, surface it explicitly rather than silently overriding:
-
-> _Contradicts ADR-0007 (event-sourced orders), but worth reopening because…_
+If a proposal contradicts an existing ADR, name the decision and explain why it may need reopening instead of silently overriding it.

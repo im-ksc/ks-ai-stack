@@ -1,0 +1,5 @@
+interface:
+  display_name: "Ship"
+  short_description: "Commit, push, open a draft PR, and review it"
+policy:
+  allow_implicit_invocation: false
