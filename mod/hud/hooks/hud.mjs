@@ -284,7 +284,11 @@ export function register(on) {
         Text({ children: [` ${label} `, Text({ color: level(percent), children: `${Math.round(percent)}%` }), resetsAt ? dim(` ↻ ${when(resetsAt, now, true)}`) : ""] }),
       ];
       const parts = [
-        b && [Text({ wrap: "truncate-end", children: `⎇ ${b.name}${b.isDirty ? "*" : ""}` })],
+        // Cut from the front, so the end of the name and its dirty mark stay.
+        b && [
+          Box({ key: "branch-icon", flexShrink: 0, children: Text({ children: "⎇ " }) }),
+          Box({ key: "branch-name", flexShrink: 1, children: Text({ wrap: "truncate-start", children: `${b.name}${b.isDirty ? "*" : ""}` }) }),
+        ],
         ...limits.map(([, short, l]) => chip(short, l.percentUsed, l.resetsAt)),
         hasContext && chip("Context", contextPercent),
         costUsd !== undefined && [Text({ children: `$${costUsd.toFixed(2)}` })],
@@ -292,13 +296,14 @@ export function register(on) {
       // Spread evenly, dividers between; nothing to show still draws the buttons, so a
       // collapsed band can be expanded.
       lines = [Box({ key: "head", flexDirection: "row", children: [
-        Box({ key: "parts", flexGrow: 1, flexDirection: "row", justifyContent: "space-evenly", alignItems: "center",
+        Box({ key: "parts", flexGrow: 1, overflow: "hidden", flexDirection: "row", justifyContent: "space-evenly", alignItems: "center",
           children: parts.flatMap((children, i) => [
             ...(i ? [Box({ key: `sep${i}`, children: sep })] : []),
-            Box({ key: `part${i}`, flexDirection: "row", alignItems: "center", flexShrink: i === 0 && b ? 1 : 0, children }), // the branch is cut first
+            Box({ key: `part${i}`, flexDirection: "row", alignItems: "center", flexShrink: i === 0 && b ? 1 : 0, children }), // only the branch is cut
           ]) }),
-        Box({ key: "gap", minWidth: 2 }),
-        ...buttons.flatMap((button, i) => (i ? [Text({ children: " " }), button] : [button])),
+        Box({ key: "gap", minWidth: 2, flexShrink: 0 }),
+        Box({ key: "buttons", flexShrink: 0, flexDirection: "row",
+          children: buttons.flatMap((button, i) => (i ? [Text({ children: " " }), button] : [button])) }),
       ] })];
     } else {
       const v = limits.length ? verdict(limits.map(([, , l]) => l), now) : null;
