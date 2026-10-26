@@ -88,6 +88,7 @@ In the desktop app, the same band draws its bars as solid rounded bars in two co
   - 0.3.4: the collapse click area still sat left of the triangle, because spaces in the desktop's font are narrower than cells. It's now centred on the triangle. The collapsed line, modelled on a screenshot of another usage line, spreads across the band with full labels, each limit's reset time and, in the desktop app, SVG rings. The todo count was dropped from it.
   - 0.3.5: a limit under 10% into its window now says `Too early to project` rather than leaving out its projection. The ellipsis beside the desktop collapse triangle, drawn where the button cut its blank label short, is now transparent.
   - 0.3.6: the desktop's collapse is now a plain `▼` / `▲` button, not a blank button over a drawn triangle. That drops the `..` the blank label was cut to, and the click lands on the glyph.
+  - 0.3.7: on a narrow band, the collapsed line ran over the Compact and collapse buttons. Only the branch is cut now, from the front (`⎇ …branch-3a61n9*`), so its end and `*` stay. Anything that still doesn't fit is clipped before the buttons.
 
 ## Run it
 
@@ -142,6 +143,7 @@ No environment variables or configuration.
 - The branch isn't refreshed when you change branches outside Claude Code. It updates after Claude's next Bash call or the next session.
 - The band above the prompt is shared. Another mod's band, such as the replay-theater hint, shows under the HUD. Which band sits on top depends on the order Claude Code runs the mods in.
 - A gateway's `spend_limit` window isn't shown.
+- Collapsed, only the branch is cut to fit. On a band too narrow for the rest of the line, the end of the line is clipped before the buttons.
 
 ## Dependencies
 
