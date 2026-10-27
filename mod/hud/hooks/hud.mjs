@@ -55,6 +55,8 @@ const ringSvg = (percent) => {
 };
 
 // A bar in one glyph, for the collapsed line: ○ ◔ ◑ ◕ ●.
+// A branch name past 20 characters keeps its end: `…` and the last 19.
+const shortBranch = (name) => (name.length > 20 ? `…${name.slice(-19)}` : name);
 const circle = (percent) => "○◔◑◕●"[Math.max(0, Math.min(4, Math.round(percent / 25)))];
 
 // 1.2M, 38k, 950.
@@ -287,7 +289,7 @@ export function register(on) {
         // Cut from the front, so the end of the name and its dirty mark stay.
         b && [
           Box({ key: "branch-icon", flexShrink: 0, children: Text({ children: "⎇ " }) }),
-          Box({ key: "branch-name", flexShrink: 1, children: Text({ wrap: "truncate-start", children: `${b.name}${b.isDirty ? "*" : ""}` }) }),
+          Box({ key: "branch-name", flexShrink: 1, children: Text({ wrap: "truncate-start", children: `${shortBranch(b.name)}${b.isDirty ? "*" : ""}` }) }),
         ],
         ...limits.map(([, short, l]) => chip(short, l.percentUsed, l.resetsAt)),
         hasContext && chip("Context", contextPercent),
