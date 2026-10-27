@@ -54,9 +54,10 @@ const ringSvg = (percent) => {
     `${arc} stroke="${HEX[level(percent)]}" pathLength="100" stroke-dasharray="${Math.max(0, Math.min(100, percent))} 100" transform="rotate(-90 6 6)"/></svg>`;
 };
 
-// A bar in one glyph, for the collapsed line: ○ ◔ ◑ ◕ ●.
 // A branch name past 20 characters keeps its end: `…` and the last 19.
 const shortBranch = (name) => (name.length > 20 ? `…${name.slice(-19)}` : name);
+
+// A bar in one glyph, for the collapsed line: ○ ◔ ◑ ◕ ●.
 const circle = (percent) => "○◔◑◕●"[Math.max(0, Math.min(4, Math.round(percent / 25)))];
 
 // 1.2M, 38k, 950.
