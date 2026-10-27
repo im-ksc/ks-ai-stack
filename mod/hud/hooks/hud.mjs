@@ -54,6 +54,9 @@ const ringSvg = (percent) => {
     `${arc} stroke="${HEX[level(percent)]}" pathLength="100" stroke-dasharray="${Math.max(0, Math.min(100, percent))} 100" transform="rotate(-90 6 6)"/></svg>`;
 };
 
+// A branch name past 20 characters keeps its end: `…` and the last 19.
+const shortBranch = (name) => (name.length > 20 ? `…${name.slice(-19)}` : name);
+
 // A bar in one glyph, for the collapsed line: ○ ◔ ◑ ◕ ●.
 const circle = (percent) => "○◔◑◕●"[Math.max(0, Math.min(4, Math.round(percent / 25)))];
 
@@ -287,16 +290,16 @@ export function register(on) {
         // Cut from the front, so the end of the name and its dirty mark stay.
         b && [
           Box({ key: "branch-icon", flexShrink: 0, children: Text({ children: "⎇ " }) }),
-          Box({ key: "branch-name", flexShrink: 1, children: Text({ wrap: "truncate-start", children: `${b.name}${b.isDirty ? "*" : ""}` }) }),
+          Box({ key: "branch-name", flexShrink: 1, children: Text({ wrap: "truncate-start", children: `${shortBranch(b.name)}${b.isDirty ? "*" : ""}` }) }),
         ],
         ...limits.map(([, short, l]) => chip(short, l.percentUsed, l.resetsAt)),
         hasContext && chip("Context", contextPercent),
         costUsd !== undefined && [Text({ children: `$${costUsd.toFixed(2)}` })],
       ].filter(Boolean);
-      // Spread evenly, dividers between; nothing to show still draws the buttons, so a
+      // From the left, dividers between; nothing to show still draws the buttons, so a
       // collapsed band can be expanded.
       lines = [Box({ key: "head", flexDirection: "row", children: [
-        Box({ key: "parts", flexGrow: 1, overflow: "hidden", flexDirection: "row", justifyContent: "space-evenly", alignItems: "center",
+        Box({ key: "parts", flexGrow: 1, overflow: "hidden", flexDirection: "row", justifyContent: "flex-start", alignItems: "center",
           children: parts.flatMap((children, i) => [
             ...(i ? [Box({ key: `sep${i}`, flexShrink: 0, children: sep })] : []),
             Box({ key: `part${i}`, flexDirection: "row", alignItems: "center", flexShrink: i === 0 && b ? 1 : 0, children }), // only the branch is cut
