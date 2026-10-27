@@ -240,7 +240,7 @@ test("collapsed, the band is one line of circles, kept across sessions", async (
   expect((await ui.find({ key: "collapse" }))?.props.label).toBe("▾");
   await ui.press({ key: "collapse" });
   expect(stored.get("isCollapsed")).toBe(true);
-  expect((await ui.find({ key: "parts" }))?.text).toMatch(/^⎇ main │ ◕ 5 Hour 81% ↻ (\w{3} )?\d\d:\d\d │ ◔ Week 20% ↻ \w{3} \d\d:\d\d │ ◔ Context 30% │ \$0\.42$/);
+  expect((await ui.find({ key: "parts" }))?.text).toMatch(/^⎇ main │ ◕ 5hr 81% ↻ (\w{3} )?\d\d:\d\d │ ◔ Wk 20% ↻ \w{3} \d\d:\d\d │ ◔ Ctx 30% │ \$0\.42$/);
   expect((await ui.find({ key: "parts" }))?.props.justifyContent).toBe("flex-start");
   expect((await ui.find({ key: "collapse" }))?.props.label).toBe("▸");
   expect(await ui.find({ key: "body" })).toBeUndefined();

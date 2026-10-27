@@ -233,7 +233,7 @@ export function register(on) {
     const collapsed = await read($, isCollapsed);
     const { contextPercent, contextTokens, contextLimit, isToCompact, contextGroups, costUsd, fiveHour, weekly } = await read($, budget);
     const t = await read($, tokens);
-    const limits = [["5 Hour", "5 Hour", fiveHour], ["Weekly", "Week", weekly]].filter(([, , l]) => l);
+    const limits = [["5 Hour", "5hr", fiveHour], ["Weekly", "Wk", weekly]].filter(([, , l]) => l);
     const hasContext = contextPercent !== undefined;
     const sep = dim(" │ ");
     const line = (key, children) => Box({ key, children: Text({ children }) }); // a Text takes no key
@@ -293,7 +293,7 @@ export function register(on) {
           Box({ key: "branch-name", flexShrink: 1, children: Text({ wrap: "truncate-start", children: `${shortBranch(b.name)}${b.isDirty ? "*" : ""}` }) }),
         ],
         ...limits.map(([, short, l]) => chip(short, l.percentUsed, l.resetsAt)),
-        hasContext && chip("Context", contextPercent),
+        hasContext && chip("Ctx", contextPercent),
         costUsd !== undefined && [Text({ children: `$${costUsd.toFixed(2)}` })],
       ].filter(Boolean);
       // From the left, dividers between; nothing to show still draws the buttons, so a
