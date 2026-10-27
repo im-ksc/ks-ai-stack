@@ -11,10 +11,10 @@ Weekly ━━━━━━━━┃━━━━───────────�
                                                            Other                                                    18k
 ```
 
-Collapsed, it's one line spread across the band, and each bar becomes a ring (a circle glyph in a terminal):
+Collapsed, it's one line from the left, with short labels, and each bar becomes a ring (a circle glyph in a terminal):
 
 ```text
-   ⎇ feat/hud*   │   ◕ 5 Hour 81% ↻ 14:00   │   ◔ Week 20% ↻ Wed 09:00   │   ◔ Context 30%   │   $0.42   [ Compact ] [ ▸ ]
+⎇ feat/hud* │ ◕ 5hr 81% ↻ 14:00 │ ◔ Wk 20% ↻ Wed 09:00 │ ◔ Ctx 30% │ $0.42                        [ Compact ] [ ▸ ]
 ```
 
 ## What this shows
@@ -90,6 +90,7 @@ In the desktop app, the same band draws its bars as solid rounded bars in two co
   - 0.3.6: the desktop's collapse is now a plain `▼` / `▲` button, not a blank button over a drawn triangle. That drops the `..` the blank label was cut to, and the click lands on the glyph.
   - 0.3.7: on a narrow band, the collapsed line ran over the Compact and collapse buttons. Only the branch is cut now, from the front (`⎇ …branch-3a61n9*`), so its end and `*` stay. Anything that still doesn't fit is clipped before the buttons.
   - 0.3.8: a collapsed branch name over 20 characters is cut to `…` and its last 19, by the mod, so it's the same in the terminal and the desktop app. The collapsed line now starts at the left rather than spreading across the band.
+  - 0.3.9: the collapsed line's labels are shorter: `5hr`, `Wk` and `Ctx`. The expanded band keeps `5 Hour`, `Weekly` and `Context`.
 
 ## Run it
 
