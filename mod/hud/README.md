@@ -89,7 +89,7 @@ In the desktop app, the same band draws its bars as solid rounded bars in two co
   - 0.3.5: a limit under 10% into its window now says `Too early to project` rather than leaving out its projection. The ellipsis beside the desktop collapse triangle, drawn where the button cut its blank label short, is now transparent.
   - 0.3.6: the desktop's collapse is now a plain `▼` / `▲` button, not a blank button over a drawn triangle. That drops the `..` the blank label was cut to, and the click lands on the glyph.
   - 0.3.7: on a narrow band, the collapsed line ran over the Compact and collapse buttons. Only the branch is cut now, from the front (`⎇ …branch-3a61n9*`), so its end and `*` stay. Anything that still doesn't fit is clipped before the buttons.
-  - 0.3.8: a collapsed branch name over 20 characters is cut to `…` and its last 19, by the mod, so it's the same in the terminal and the desktop app.
+  - 0.3.8: a collapsed branch name over 20 characters is cut to `…` and its last 19, by the mod, so it's the same in the terminal and the desktop app. The collapsed line now starts at the left rather than spreading across the band.
 
 ## Run it
 
