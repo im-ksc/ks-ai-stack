@@ -55,6 +55,7 @@ Claude renames a function across three files. `/replay` opens the pane: `n` move
   - Tested in Claude Code: a rename across three files made 5 edits, and the pane stepped through all of them with Prev, Next and Close. A Write of a new file showed as one step.
   - 0.1.1: the hint replaced the hud band after each turn. It now draws the band beneath it under the hint.
   - 0.1.2: the desktop app showed each button's hotkey as a chip, so the buttons there have no hotkeys. Explain now writes for a non-technical reader, about the edit as a whole, at whatever length the edit needs.
+  - 0.1.3: the hint and the band beneath it, such as hud, touched. They now have a gap between them: a row in the terminal, half a row on desktop.
 
 ## Run it
 

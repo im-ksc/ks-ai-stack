@@ -337,9 +337,9 @@ export function register(on, options) {
         Button({ key: "open-replay", label: "Replay", ...(e.surface !== "desktop" && { hotkey: "r" }), onPress: () => openReplay($) }),
       ],
     });
-    // Another mod's band, such as hud, stays under the hint.
+    // Another mod's band, such as hud, stays under the hint, a row apart.
     const beneath = await next(e);
-    return beneath ? Box({ flexDirection: "column", children: [hint, beneath] }) : hint;
+    return beneath ? Box({ key: "replay-stack", flexDirection: "column", gap: e.surface === "desktop" ? 0.5 : 1, children: [hint, beneath] }) : hint;
   });
 
   // The pane.
