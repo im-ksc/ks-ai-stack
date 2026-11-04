@@ -136,7 +136,7 @@ test("the band names the edit count and Done closes the pane", async ($, on) => 
   await ui.unmount();
 });
 
-test("another mod's band still shows under the hint", async ($, on) => {
+test("another mod's band still shows under the hint, a gap below it", async ($, on) => {
   on("ui.render", () => ({ type: "Text", props: {}, children: ["other band"] }) as never);
   on("turn.start", () => ({ turnId: "t1" }));
   on("turn.complete", () => ({ text: "" }));
@@ -144,10 +144,13 @@ test("another mod's band still shows under the hint", async ($, on) => {
   await $.turn.start({ turnId: "t1" } as never);
   await $.tool.call({ tool: "Edit", file_path: "/p/a.js", old_string: "1", new_string: "2" });
   await $.turn.complete({ turnId: "t1", reason: "answer", answer: "", durationMs: 1, isAborted: false });
-  const band = await $.ui.mount({ plugin: "replay-theater", surface: "terminal", component: "AbovePrompt", props: {} as never });
-  expect(await band.find({ type: "Text", text: /^1 edit in the last turn$/ })).toBeDefined();
-  expect(await band.find({ type: "Text", text: "other band" })).toBeDefined();
-  await band.unmount();
+  for (const surface of ["terminal", "desktop"] as const) {
+    const band = await $.ui.mount({ plugin: "replay-theater", surface, component: "AbovePrompt", props: {} as never });
+    expect(await band.find({ type: "Text", text: /^1 edit in the last turn$/ })).toBeDefined();
+    expect(await band.find({ type: "Text", text: "other band" })).toBeDefined();
+    expect((await band.find({ key: "replay-stack" }))?.props.gap).toBe(surface === "desktop" ? 0.5 : 1);
+    await band.unmount();
+  }
 });
 
 test("Reviewed ticks the edit, dims its row and moves on", async ($, on) => {
