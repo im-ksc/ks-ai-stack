@@ -47,7 +47,9 @@ Most skills started as copies of upstream repos. The copies here are forks: many
 
 ## Matt Pocock merge baseline
 
-Reviewed on 2026-10-23 against [5beb35b040e3de97e54fa9e386d7e42d15c295c2](https://github.com/mattpocock/skills/tree/5beb35b040e3de97e54fa9e386d7e42d15c295c2). This records the upstream revision reviewed, including deliberately skipped changes. It is not a claim that the copies match upstream. For the next merge, compare upstream changes since that revision with these local copies and reconcile by intent. The original import revision was not recorded.
+Reviewed on 2026-11-13 against [5863806dd4e15c63174bee4e7515a4256792ecfa](https://github.com/mattpocock/skills/tree/5863806dd4e15c63174bee4e7515a4256792ecfa). The previous review was [5beb35b](https://github.com/mattpocock/skills/tree/5beb35b040e3de97e54fa9e386d7e42d15c295c2) on 2026-10-23. This records the upstream revision reviewed, including deliberately skipped changes. It is not a claim that the copies match upstream. For the next merge, compare upstream changes since that revision with these local copies and reconcile by intent. The original import revision was not recorded.
+
+Skipped in the 2026-11-13 review: the GitHub and GitLab tracker template fixes (only the Plane tracker is installed), the setup offer to rename legacy `CONTEXT` files to `GLOSSARY` names (local rule keeps them in place), and the in-progress `software-factory` skill.
 
 Local differences to preserve:
 
@@ -61,3 +63,14 @@ Local differences to preserve:
 The added [implement-spec](implement-spec/LICENSE), [pr](pr/LICENSE), and [retro](retro/LICENSE) copies retain Matt Pocock's MIT notice. The PR skill also retains its [upstream credits](pr/CREDITS.md).
 
 Run the wizard helper regression checks with `python3 .agents/skills/wizard/template.test.py`. They use dummy values and temporary files without contacting services or opening a browser.
+
+## Other source baselines
+
+Reviewed on 2026-11-13. These copies match upstream at the listed revision except where noted.
+
+| Source | Revision | Skills | Local differences |
+| --- | --- | --- | --- |
+| [backnotprop/pstack](https://github.com/backnotprop/pstack) | [97de40d](https://github.com/backnotprop/pstack/tree/97de40dcca2fa396124c3e70a1d8cc28005f60a3) | bro, how, typescript-best-practices, unslop | `how` drops the pointer to the `poteto-mode` skill, which is not installed. |
+| [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail) | [96608e0](https://github.com/DietrichGebert/ponytail/tree/96608e078b2d5ea607c5c3b8b5a54d1c1fba6846) | ponytail | None. |
+| [pbakaus/impeccable](https://github.com/pbakaus/impeccable) | [b4bff16](https://github.com/pbakaus/impeccable/tree/b4bff1626c344067788c2679f048a20057c7cc5a) | impeccable (from `.agents/skills/impeccable`) | None. |
+| [anthropics/skills](https://github.com/anthropics/skills) | [2c5958e](https://github.com/anthropics/skills/tree/2c5958ecac7cee2b583967a2c4981d0f4a75c579) | frontend-design | None. |

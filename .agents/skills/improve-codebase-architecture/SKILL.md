@@ -26,7 +26,7 @@ Resolve the project glossary using the [glossary rules](../setup-matt-pocock-ski
 
 Read the selected project glossary and any ADRs in the area you're touching first.
 
-Then spawn a sub-agent to walk the codebase. Don't follow rigid heuristics; explore organically and note where you experience friction:
+Then spawn a sub-agent with a fresh context window to walk the codebase. Don't follow rigid heuristics; explore organically and note where you experience friction:
 
 - Where does understanding one concept require bouncing between many small modules?
 - Where are modules **shallow**, with an interface nearly as complex as the implementation?

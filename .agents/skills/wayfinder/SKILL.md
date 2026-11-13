@@ -112,7 +112,7 @@ User invokes with a loose idea.
 2. **Map the frontier.** Grill again, **breadth-first** this time: fan out across the whole space rather than deep on any one thread, surfacing the open decisions and the first steps takeable now. **If this surfaces no fog** (the way to the destination is already clear, the whole journey small enough for one session), you don't need a map. Stop and ask the user how they'd like to proceed.
 3. **Draft the map and initial tickets**, with Destination and Notes filled in, Decisions-so-far empty, and the fog sketched into **Not yet specified**. Show the draft and ask whether to add it to Plane Engineering.
 4. **Save the map and tickets.** If yes, create the Plane map and child work items, then wire blocking edges and cross-references in a second pass using real identifiers. If no, write the local map and ticket files with `Blocked by` links to their actual paths. Placeholder issue numbers can link to unrelated work. Return the Plane link or local map path for review.
-5. **Fire the research subagents.** For each `research` ticket you just created, spin up a subagent that calls the Skill tool with "research" to resolve it in parallel, capturing its findings on a throwaway `research/<name>` branch with a context pointer from the ticket.
+5. **Fire the research subagents.** For each `research` ticket you just created, spin up a subagent with a fresh context window that calls the Skill tool with "research" to resolve it in parallel, capturing its findings on a throwaway `research/<name>` branch with a context pointer from the ticket.
 6. Stop: charting is one session's work; it hand-resolves nothing.
 
 ### Work through the map
