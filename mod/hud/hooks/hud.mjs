@@ -54,7 +54,7 @@ const ringSvg = (percent) => {
     `${arc} stroke="${HEX[level(percent)]}" pathLength="100" stroke-dasharray="${Math.max(0, Math.min(100, percent))} 100" transform="rotate(-90 6 6)"/></svg>`;
 };
 
-// A branch name past 20 characters keeps its end: `…` and the last 19.
+// A branch name past 20 characters keeps its end: `…` and the last 19. Both lines use it.
 const shortBranch = (name) => (name.length > 20 ? `…${name.slice(-19)}` : name);
 
 // A bar in one glyph, for the collapsed line: ○ ◔ ◑ ◕ ●.
@@ -265,14 +265,17 @@ export function register(on) {
         : Button({ key: "collapse", label: collapsed ? "▸" : "▾", hotkey: "h", onPress: toggle }),
     ];
     // Parts kept whole; the one marked `shrinks` is cut with … when the row is too narrow.
+    // Anything that still doesn't fit is clipped before the buttons.
     const row = (key, parts) => Box({
       key, flexDirection: "row",
       children: [
-        ...parts.map(({ shrinks, children }, i) => Box({
-          key: `part${i}`, flexShrink: shrinks ? 1 : 0, children: Text({ wrap: "truncate-end", children }),
-        })),
-        Box({ key: "gap", flexGrow: 1, minWidth: 2 }),
-        ...buttons.flatMap((button, i) => (i ? [Text({ children: " " }), button] : [button])),
+        Box({ key: "parts", flexGrow: 1, overflow: "hidden", flexDirection: "row",
+          children: parts.map(({ shrinks, children }, i) => Box({
+            key: `part${i}`, flexShrink: shrinks ? 1 : 0, children: Text({ wrap: "truncate-end", children }),
+          })) }),
+        Box({ key: "gap", minWidth: 2, flexShrink: 0 }),
+        Box({ key: "buttons", flexShrink: 0, flexDirection: "row",
+          children: buttons.flatMap((button, i) => (i ? [Text({ children: " " }), button] : [button])) }),
       ],
     });
     const join = (parts, between) => parts.flatMap((p, i) => (i ? [{ children: between }, p] : [p]));
@@ -311,7 +314,7 @@ export function register(on) {
     } else {
       const v = limits.length ? verdict(limits.map(([, , l]) => l), now) : null;
       const parts = [
-        b && { children: `⎇ ${b.name}${b.isDirty ? "*" : ""}` },
+        b && { children: `⎇ ${shortBranch(b.name)}${b.isDirty ? "*" : ""}` },
         v && { shrinks: true, children: Text({ color: v.color, children: v.text }) },
         cost && { children: cost },
       ].filter(Boolean);

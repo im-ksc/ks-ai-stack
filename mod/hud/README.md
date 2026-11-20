@@ -91,6 +91,7 @@ In the desktop app, the same band draws its bars as solid rounded bars in two co
   - 0.3.7: on a narrow band, the collapsed line ran over the Compact and collapse buttons. Only the branch is cut now, from the front (`⎇ …branch-3a61n9*`), so its end and `*` stay. Anything that still doesn't fit is clipped before the buttons.
   - 0.3.8: a collapsed branch name over 20 characters is cut to `…` and its last 19, by the mod, so it's the same in the terminal and the desktop app. The collapsed line now starts at the left rather than spreading across the band.
   - 0.3.9: the collapsed line's labels are shorter: `5hr`, `Wk` and `Ctx`. The expanded band keeps `5 Hour`, `Weekly` and `Context`.
+  - 0.3.10: on the expanded band, a long branch name pushed the Compact and collapse buttons out of view. A branch name over 20 characters is now cut to `…` and its last 19 there too, and anything that still doesn't fit is clipped before the buttons.
 
 ## Run it
 
@@ -145,7 +146,7 @@ No environment variables or configuration.
 - The branch isn't refreshed when you change branches outside Claude Code. It updates after Claude's next Bash call or the next session.
 - The band above the prompt is shared. Another mod's band, such as the replay-theater hint, shows under the HUD. Which band sits on top depends on the order Claude Code runs the mods in.
 - A gateway's `spend_limit` window isn't shown.
-- Collapsed, a branch name over 20 characters shows as `…` and its last 19, and only the branch is cut to fit. On a band too narrow for the rest of the line, the end of the line is clipped before the buttons.
+- A branch name over 20 characters shows as `…` and its last 19. Collapsed, only the branch is cut to fit. On a band too narrow for the rest of the first line, its end is clipped before the buttons.
 
 ## Dependencies
 
