@@ -277,6 +277,27 @@ test("collapsed, only the branch is cut, from the front, and nothing covers the 
   }
 });
 
+test("expanded, a long branch is cut to its end and nothing covers the buttons", async ($, on) => {
+  on("ui.render", () => ENGINE as never);
+  on("store.get", () => ({ value: undefined }) as never);
+  on("command.register", () => ({ value: undefined }) as never);
+  on("session.measure", (_$, e) => ({ changed: e.changed }));
+  on("session.usage", () => ({ value: { startedAt: 0, rateLimits: [], context: { window: 200000, breakdown: BREAKDOWN } } }) as never);
+  git(on, "claude/a-very-long-branch-name-3a61n9", " M a.js\n");
+  on("session.start", () => ({ cwd: "/p" }));
+  await $.session.start({ cwd: "/p" } as never);
+  await $.session.measure({ context: { tokens: 48000, window: 200000, percent: 24 }, rateLimits: limits([81, 1], [20, 100]), cost: { usd: 0.42 }, changed: ["context", "rateLimits", "cost"] });
+  for (const surface of ["terminal", "desktop"] as const) {
+    const ui = await band($, surface, 70);
+    expect((await ui.find({ type: "Text", text: /^⎇/ }))?.text).toBe("⎇ …-branch-name-3a61n9*");
+    expect((await ui.find({ key: "parts" }))?.props.overflow).toBe("hidden");
+    expect((await ui.find({ key: "buttons" }))?.props.flexShrink).toBe(0);
+    expect(await ui.find({ key: "compact" })).toBeDefined();
+    expect(await ui.find({ key: "collapse" })).toBeDefined();
+    await ui.unmount();
+  }
+});
+
 test("collapsed, a branch of up to 20 characters shows whole", async ($, on) => {
   on("ui.render", () => ENGINE as never);
   on("store.get", (_$, e) => ({ value: e.key === "isCollapsed" ? true : undefined }) as never);
