@@ -1,14 +1,14 @@
 ---
-name: ship
+name: ship-draft
 description: "Commit the current task, push its branch, open a draft PR, and get one private mid-tier agent review."
 disable-model-invocation: true
 ---
 
-# Ship
+# Ship Draft
 
-Run only when the user explicitly invokes `/ship`. Invocation authorizes the task-scoped commit, normal push, draft PR creation or reuse, and one private agent review. Accept repository, task, head, base, and reviewer-model overrides from the invocation.
+Run only when the user explicitly invokes `/ship-draft`. Invocation authorizes the task-scoped commit, normal push, draft PR creation or reuse, and one private agent review. Accept repository, task, head, base, and reviewer-model overrides from the invocation.
 
-Read [commit](../commit/SKILL.md) for scope, selective staging, Conventional Commit messages, required checks, hooks, and commit verification. Apply those rules without invoking that standalone workflow. Its local-only stopping point remains unchanged; `/ship` authorizes the continuation below. Read [pr](../pr/SKILL.md) when writing the PR body and [unslop](../unslop/SKILL.md) for prose.
+Read [commit](../commit/SKILL.md) for scope, selective staging, Conventional Commit messages, required checks, hooks, and commit verification. Apply those rules without invoking that standalone workflow. Its local-only stopping point remains unchanged; `/ship-draft` authorizes the continuation below. Read [pr](../pr/SKILL.md) when writing the PR body and [unslop](../unslop/SKILL.md) for prose.
 
 ## 1. Resolve the publication and reviewer
 
