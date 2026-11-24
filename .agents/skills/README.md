@@ -31,7 +31,7 @@ Most skills started as copies of upstream repos. The copies here are forks: many
 | resolving-merge-conflicts | [mattpocock/skills](https://github.com/mattpocock/skills) | MIT |
 | retro | [mattpocock/skills](https://github.com/mattpocock/skills) | MIT |
 | setup-matt-pocock-skills | [mattpocock/skills](https://github.com/mattpocock/skills) | MIT |
-| ship | local | |
+| ship-draft | local | |
 | tdd | [mattpocock/skills](https://github.com/mattpocock/skills) | MIT |
 | teach | [mattpocock/skills](https://github.com/mattpocock/skills) | MIT |
 | to-questionnaire | [mattpocock/skills](https://github.com/mattpocock/skills) | MIT |
